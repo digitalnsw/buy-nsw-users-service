@@ -16,7 +16,7 @@ module UserService
     end
 
     def update_seller
-      UserService::User.find(params[:id])
+      ::User.find(params[:id])
                        .update_attributes!(seller_id: params[:seller_id])
     end
 
@@ -28,14 +28,14 @@ module UserService
 
     def remove_from_supplier
       raise "Only superadmin may remove users" unless service_user.is_superadmin?
-      user = UserService::User.find_by(id: params[:id])
+      user = ::User.find_by(id: params[:id])
       user.update_column(:seller_id, nil) if user.present?
       render json: { message: 'User successfully removed from supplier' }, status: :accepted
     end
 
     def destroy
       raise "Only superadmin may destroy users" unless service_user.is_superadmin?
-      user = UserService::User.find_by(id: params[:id])
+      user = ::User.find_by(id: params[:id])
       if user.present?
         user.update_column(:email, user.email + '_' + Time.now.to_i.to_s)
         user.destroy 
@@ -53,12 +53,12 @@ module UserService
     end
 
     def get_by_id
-      @users = UserService::User.where(id: params[:id])
+      @users = ::User.where(id: params[:id])
       render json: serializer.index
     end
 
     def get_by_email
-      @users = UserService::User.where(email: params[:email])
+      @users = ::User.where(email: params[:email])
       render json: serializer.index
     end
 
@@ -223,7 +223,7 @@ module UserService
       @waiting_seller = SharedResources::RemoteWaitingSeller.find_by_token params[:token]
       if @waiting_seller.nil?
         raise SharedModules::AlertError.new("Token is invalid! You probably have already used this link and registered!")
-      elsif UserService::User.exists?(email: @waiting_seller.email)
+      elsif ::User.exists?(email: @waiting_seller.email)
         raise SharedModules::AlertError.new(@waiting_seller.email + " is already a registered user!")
       else
         @user = ::User.new(
