@@ -30,5 +30,8 @@ UserService::Engine.routes.draw do
   resources :members, only: [:index, :create]
 
   # remove this line when pretender is taken out
+  puts '*'*40
+  puts Rails.env.to_s
+  puts '*'*40
   devise_for :users, only: [] if Rails.env.development? || Rails.env.production?
 end
