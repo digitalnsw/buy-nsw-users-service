@@ -28,4 +28,7 @@ UserService::Engine.routes.draw do
   end
 
   resources :members, only: [:index, :create]
+
+  # remove this line when pretender is taken out
+  devise_for :users, only: [] if Rails.env.development? || Rails.env.production?
 end
