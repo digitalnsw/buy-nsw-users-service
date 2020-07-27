@@ -80,7 +80,7 @@ module UserService
     end
 
     def seller_owners
-      @users = UserService::User.where(seller_id: params[:seller_id])
+      @users = ::User.where(seller_id: params[:seller_id])
       render json: serializer.index
     end
 

@@ -28,6 +28,4 @@ UserService::Engine.routes.draw do
   end
 
   resources :members, only: [:index, :create]
-
-  devise_for :users, only: []
 end
