@@ -29,6 +29,7 @@ UserService::Engine.routes.draw do
 
   resources :members, only: [:index, :create]
 
-  # remove this line when pretender is taken out
-  devise_for :users, only: [] if ENV['USERS_ENGINE_ROUTE'] || (!Rails.env.test? && !ENV['CIRCLECI'])
+  # remove this line when pretender is taken out also DEVISE_FOR_ROUTE will be removed
+  # from backend env files
+  devise_for :users, only: [] if ENV['DEVISE_FOR_ROUTE'] || Rails.env.production?
 end

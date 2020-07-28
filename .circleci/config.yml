@@ -6,7 +6,6 @@ jobs:
        - image: circleci/ruby:2.6.6-node-browsers
          environment:
            DATABASE_URL: postgresql://localhost/nsw_procure_test
-           CIRCLECI: true
 
        - image: circleci/postgres:10.6-alpine-ram
          environment:
