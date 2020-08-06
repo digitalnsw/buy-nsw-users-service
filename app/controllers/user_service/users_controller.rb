@@ -227,6 +227,7 @@ module UserService
         raise SharedModules::AlertError.new(@waiting_seller.email + " is already a registered user!")
       else
         @user = ::User.new(
+          full_name: @waiting_seller.contact_name,
           email: @waiting_seller.email,
           password: params[:password],
           password_confirmation: params[:password],
@@ -258,6 +259,7 @@ module UserService
         logout_user current_user
         @user.confirm
         @user.reset_password(params[:password], params[:password])
+        @user.update_attributes!(full_name: params[:full_name])
         log_invitation_event!
         login_user @user
         render json: { message: 'Invitation accepted' }, status: :accepted
