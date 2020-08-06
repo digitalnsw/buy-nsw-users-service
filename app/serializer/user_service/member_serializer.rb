@@ -8,6 +8,7 @@ module UserService
     def attributes(member)
       {
         id: member.id,
+        full_name: member.full_name,
         email: member.email,
       }
     end
