@@ -10,6 +10,7 @@ module UserService
         id: member.id,
         full_name: member.full_name,
         email: member.email,
+        confirmed: user.confirmed?
       }
     end
 
