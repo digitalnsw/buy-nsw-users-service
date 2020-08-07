@@ -37,8 +37,10 @@ module UserService
       raise "Only superadmin may destroy users" unless service_user.is_superadmin?
       user = ::User.find_by(id: params[:id])
       if user.present?
-        user.update_column(:email, user.email + '_' + Time.now.to_i.to_s)
-        user.destroy 
+        ::User.transaction do
+          user.update_column(:email, user.email + '_' + Time.now.to_i.to_s)
+          user.destroy
+        end
       end
       render json: { message: 'User successfully destroyed' }, status: :accepted
     end
@@ -257,9 +259,11 @@ module UserService
         raise SharedModules::AlertError.new("Invitation already accepted")
       else
         logout_user current_user
-        @user.confirm
-        @user.reset_password(params[:password], params[:password])
-        @user.update_attributes!(full_name: params[:full_name])
+        ::User.transaction do
+          @user.confirm
+          @user.reset_password(params[:password], params[:password])
+          @user.update_attributes!(full_name: params[:full_name])
+        end
         log_invitation_event!
         login_user @user
         render json: { message: 'Invitation accepted' }, status: :accepted
