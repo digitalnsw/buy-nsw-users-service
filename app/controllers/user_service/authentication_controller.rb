@@ -68,7 +68,7 @@ module UserService
         csrf_token: session[:_csrf_token] || form_authenticity_token,
       }
       if current_user.present? && !@sign_out
-        me = update_session_user current_user
+        me = reset_session_user current_user
         result.merge!({
           user: {
             id: me.id,

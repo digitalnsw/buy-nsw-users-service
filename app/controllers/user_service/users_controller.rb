@@ -107,7 +107,7 @@ module UserService
       end
 
       sign_in(@user, bypass: true)
-      update_session_user @user
+      reset_session_user @user
       log_user_event!("User email/password updated")
       render json: serializer.show, status: :accepted
     end
@@ -135,7 +135,7 @@ module UserService
         end
 
         sign_in(@user, bypass: true)
-        update_session_user @user
+        reset_session_user @user
 
         log_user_event!("User email/password updated")
         render json: { message: 'User updated' }, status: :accepted
@@ -322,7 +322,7 @@ module UserService
     def login_user user
       reset_session
       sign_in(user, scope: :user)
-      update_session_user user
+      reset_session_user user
       form_authenticity_token
     end
 
