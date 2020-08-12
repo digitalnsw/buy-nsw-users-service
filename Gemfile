@@ -7,7 +7,7 @@ gem 'dotenv-rails'
 group :test do
   gem 'rails', '~> 5.2.4'
   gem 'pg'
-  gem 'shared_libraries', git: 'https://github.com/digitalnsw/buy-nsw-shared-libraries', tag: 'v7'
+  gem 'shared_libraries', git: 'https://github.com/digitalnsw/buy-nsw-shared-libraries', tag: 'v16'
 
   gem 'devise'
   gem 'enumerize'

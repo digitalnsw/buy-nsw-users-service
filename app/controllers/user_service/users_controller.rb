@@ -313,6 +313,7 @@ module UserService
     private
 
     def logout_user user
+      reset_c_session
       if user.present?
         sign_out user
         reset_session

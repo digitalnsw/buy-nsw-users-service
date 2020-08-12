@@ -8,6 +8,7 @@ module UserService
       if current_user
         sign_out current_user
         reset_session
+        reset_c_session
       end
       user_info
     end
