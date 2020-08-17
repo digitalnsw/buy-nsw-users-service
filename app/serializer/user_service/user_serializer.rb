@@ -11,6 +11,8 @@ module UserService
         email: user.unconfirmed_email || user.email,
         full_name: user.full_name,
         confirmed_email: user.email,
+        newPassword: '',
+        currentPassword: '',
         roles: user.roles.to_a,
         seller_id: user.seller_id,
         confirmed: user.unconfirmed_email.nil? || user.email == user.unconfirmed_email

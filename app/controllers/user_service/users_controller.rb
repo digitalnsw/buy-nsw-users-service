@@ -87,29 +87,33 @@ module UserService
     end
 
     def update
-      @user.update_attributes!(full_name: params[:user][:full_name]) if @user.full_name != params[:user][:full_name]
+      unless @user&.valid_password?(params[:user][:currentPassword])
+        render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
+      else
+        @user.update_attributes!(full_name: params[:user][:full_name]) if @user.full_name != params[:user][:full_name]
 
-      if (@user.unconfirmed_email || @user.email) != params[:user][:email]
+        if (@user.unconfirmed_email || @user.email) != params[:user][:email]
 
-        @user.email = params[:user][:email]
-        unless @user.save
-          render json: { errors: [{ email: 'Email address is currently in use or invalid' }] }, status: :unprocessable_entity
-          return
+          @user.email = params[:user][:email]
+          unless @user.save
+            render json: { errors: [{ email: 'Email address is currently in use or invalid' }] }, status: :unprocessable_entity
+            return
+          end
         end
-      end
 
-      if params[:user][:newPassword].present?
-        @user.reload
-        unless @user.reset_password(params[:user][:newPassword], params[:user][:newPassword])
-          render json: { errors: [{ newPassword: 'Password was not accepted' }] }, status: :unprocessable_entity
-          return
+        if params[:user][:newPassword].present?
+          @user.reload
+          unless @user.reset_password(params[:user][:newPassword], params[:user][:newPassword])
+            render json: { errors: [{ newPassword: 'Password was not accepted' }] }, status: :unprocessable_entity
+            return
+          end
         end
-      end
 
-      sign_in(@user, bypass: true)
-      reset_session_user @user
-      log_user_event!("User email/password updated")
-      render json: serializer.show, status: :accepted
+        sign_in(@user, bypass: true)
+        reset_session_user @user
+        log_user_event!("User email/password updated")
+        render json: serializer.show, status: :accepted
+      end
     end
 
     def update_account
