@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/digitalnsw/buy-nsw-shared-libraries
-  revision: 7cb1f32d77451ae9aa28a32d48816bd5c6b1a72e
-  tag: v16
+  revision: ce29e77c1d7681472a6a1e67e3da803a5b521f65
+  tag: v21
   specs:
     shared_libraries (0.0.1)
       activeresource (~> 5.1.0)
@@ -105,7 +105,7 @@ GEM
       activesupport (>= 4.2.0)
     i18n (1.8.5)
       concurrent-ruby (~> 1.0)
-    jwt (2.2.1)
+    jwt (2.2.2)
     loofah (2.6.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)

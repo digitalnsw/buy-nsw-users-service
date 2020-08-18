@@ -241,7 +241,7 @@ module UserService
           confirmed_at: Time.now,
         )
         if @user.save
-          seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id
+          seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id, @user.id
           @user.update_attributes!(seller_id: seller_id)
           log_invitation_event!
           login_user @user
