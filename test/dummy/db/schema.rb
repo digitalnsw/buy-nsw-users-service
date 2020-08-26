@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_06_17_052258) do
+ActiveRecord::Schema.define(version: 2020_08_26_204458) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
@@ -142,6 +142,7 @@ ActiveRecord::Schema.define(version: 2020_06_17_052258) do
     t.integer "resolved_by_id"
     t.datetime "resolved_at"
     t.string "email"
+    t.json "attachment_ids"
   end
 
   create_table "product_field_statuses", force: :cascade do |t|
@@ -486,6 +487,7 @@ ActiveRecord::Schema.define(version: 2020_06_17_052258) do
     t.boolean "offers_ict"
     t.integer "profile_address_index", default: 0
     t.json "schemes_and_panels", default: []
+    t.string "contact_position"
     t.index ["discarded_at"], name: "index_seller_versions_on_discarded_at"
     t.index ["edited_by_id"], name: "index_seller_versions_on_edited_by_id"
     t.index ["next_version_id"], name: "index_seller_versions_on_next_version_id"
@@ -496,6 +498,7 @@ ActiveRecord::Schema.define(version: 2020_06_17_052258) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "discarded_at"
+    t.integer "owner_id"
     t.index ["discarded_at"], name: "index_sellers_on_discarded_at"
   end
 
@@ -576,6 +579,7 @@ ActiveRecord::Schema.define(version: 2020_06_17_052258) do
     t.datetime "last_failed_at"
     t.integer "failed_count"
     t.string "full_name"
+    t.string "uuid"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -623,4 +627,5 @@ ActiveRecord::Schema.define(version: 2020_06_17_052258) do
   add_foreign_key "seller_versions", "seller_versions", column: "next_version_id"
   add_foreign_key "seller_versions", "sellers"
   add_foreign_key "seller_versions", "users", column: "edited_by_id"
+  add_foreign_key "sellers", "users", column: "owner_id"
 end

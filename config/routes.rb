@@ -3,6 +3,14 @@ UserService::Engine.routes.draw do
   post '/login', to: 'authentication#login'
   post '/logout', to: 'authentication#logout'
 
+  resources :sso do
+    get :login, on: :collection
+    get :logout, on: :collection
+    get :sync, on: :collection
+    get :signup, on: :collection
+    get :profile, on: :collection
+  end
+
   resources :users do
     post :signup, on: :collection
 
