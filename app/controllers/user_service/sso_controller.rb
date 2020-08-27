@@ -95,6 +95,7 @@ module UserService
     end
 
     def profile
+      redirect_to '/ict/account/settings'
     end
   end
 end
