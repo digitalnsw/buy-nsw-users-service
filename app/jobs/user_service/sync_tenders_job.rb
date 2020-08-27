@@ -9,7 +9,7 @@ module UserService
       name = user.full_name || ''
       token = encrypt_and_sign({
         "iss": "SUPPLIER_HUB",
-        "aud": URI.parse(ENV['ETENDERING_URL']).host,
+        "aud": URI(ENV['ETENDERING_URL']).host,
         "iat": Time.now.to_i,
         "exp": Time.now.to_i + 30,
         "nonce": rand(1<<60),
