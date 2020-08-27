@@ -76,9 +76,13 @@ module UserService
       end
     end
 
+    def soft_redirect url
+      render inline: "<html><script>window.location='#{url.gsub("'", "\\'")}';</script></html>"
+    end
+
     def sync
       raise_error unless loginURL.present?
-      redirect_to loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
+      soft_redirect loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
     end
 
     def signup
