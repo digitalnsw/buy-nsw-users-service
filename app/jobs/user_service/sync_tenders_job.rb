@@ -14,6 +14,15 @@ module UserService
       lastname = 'Lastname' if lastname.blank?
       host = URI(ENV['ETENDERING_URL']).host
       version = user.seller&.last_version
+      sme_hash = {
+        'sole' => '0-19',
+        '2to4' => '0-19',
+        '5to19' => '0-19',
+        '20to49' => '20-100',
+        '50to99' => '20-100',
+        '100to199' => '101-200',
+        '200plus' => '200+',
+      }
       hash = {
         "iss": "SUPPLIER_HUB",
         "aud": host,
@@ -23,17 +32,17 @@ module UserService
         "firstname": firstname,
         "surname": lastname,
         "email": user.email,
-        "companyName": version.name || "PTY LTD",
-        "SMEStatus": "0-20",
-        "ABN": version.abn || "51824753556",
+        "companyName": version&.name || "PTY LTD",
+        "SMEStatus": sme_hash[version&.number_of_employees] || "0-19",
+        "ABN": version&.abn || "51824753556",
         "age": "1",
-        "addressLine1": version.addresses.first.adress || "1 First St",
-        "addressLine2": version.addresses.first.address_2 || "",
-        "city": version.addresses.first.suburb || "Sydney",
-        "state": version.addresses.first.state || "NSW",
-        "postcode": version.addresses.first.postcode || "2000",
-        "country": version.addresses.first.country || "Australia",
-        "companyPhone": version.addresses.first.contact_phone || "0"
+        "addressLine1": version&.addresses&.first&.adress || "1",
+        "addressLine2": version&.addresses&.first&.address_2 || "",
+        "city": version&.addresses&.first&.suburb || "Sydney",
+        "state": version&.addresses&.first&.state || "NSW",
+        "postcode": version&.addresses&.first&.postcode || "2000",
+        "country": version&.addresses&.first&.country || "Australia",
+        "companyPhone": version&.addresses&.first&.contact_phone || "0"
       }
       hash['sub'] = user.uuid if user.uuid
       token = encrypt_and_sign(hash)
