@@ -25,14 +25,14 @@ module UserService
         raise_error unless redirectString =~ URI::regexp
         uri = URI.parse(redirectString)
         raise_error unless uri.scheme == 'https'
-        raise_error unless uri.host.ends_with?('.buy.nsw.gov.au') || uri.host == tenders_host
+        raise_error unless uri.host.ends_with?('.nsw.gov.au')
       end
       
       if loginURL.present?
         raise_error unless loginURL =~ URI::regexp
         uri = URI.parse(loginURL)
         raise_error unless uri.scheme == 'https'
-        raise_error unless uri.host.ends_with?('.buy.nsw.gov.au') || uri.host == tenders_host
+        raise_error unless uri.host.ends_with?('.nsw.gov.au')
       end
     end
 
