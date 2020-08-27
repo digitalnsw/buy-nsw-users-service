@@ -33,7 +33,7 @@ module UserService
         "surname": lastname,
         "email": user.email,
         "companyName": version&.name || "PTY LTD",
-        "SMEStatus": sme_hash[version&.number_of_employees] || "0-19",
+        "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
         "ABN": version&.abn || "51824753556",
         "age": "1",
         "addressLine1": version&.addresses&.first&.adress || "1",
