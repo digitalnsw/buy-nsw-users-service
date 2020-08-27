@@ -47,7 +47,6 @@ module UserService
         iss: 'SUPPLIER_HUB',
         iat: Time.now.to_i,
         exp: Time.now.to_i + 30,
-        redirectString: redirectString,
         nonce: rand(1<<60),
         aud: URI.parse(loginURL).host,
       }
@@ -72,15 +71,14 @@ module UserService
         sync
       else 
         redirect_to '/ict/login?redirectString=' +
-          URI.escape(redirectString) + '&loginURL=' +
-          URI.escape(loginURL)
+          CGI.escape(redirectString) + '&loginURL=' +
+          CGI.escape(loginURL)
       end
     end
 
     def sync
       raise_error unless loginURL.present?
-      url = loginURL
-      redirect_to url + (url.include?('?') ? '&' : '?') + 'AuthorisedSupplierHubToken=' + generate_token
+      redirect_to loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
     end
 
     def signup

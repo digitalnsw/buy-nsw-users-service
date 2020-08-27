@@ -20,14 +20,12 @@ module UserService
         "SMEStatus": "0-20",
         "ABN": "51824753556",
         "age":"1",
-        "address":{
-          "addressLine1":"1 First St",
-          "addressLine2":"",
-          "city":"Sydney",
-          "state":"NSW",
-          "postcode":"2000",
-          "country":"Australia"
-        },
+        "addressLine1":"1 First St",
+        "addressLine2":"",
+        "city":"Sydney",
+        "state":"NSW",
+        "postcode":"2000",
+        "country":"Australia",
         "companyPhone":"0"
       })
       uri = URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.create&supplierHubDetails='+token)
