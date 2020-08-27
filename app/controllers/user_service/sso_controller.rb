@@ -51,9 +51,8 @@ module UserService
         nonce: rand(1<<60),
         aud: URI.parse(loginURL).host,
       }
-      private_key = OpenSSL::PKey::RSA.new File.read(Rails.root.join('sso_rsa.pem').to_s), ENV['SSO_KEY_PASS']
       # TODO: Log this token, when tenders implemented the nonce invalidator
-      JWT.encode(data, private_key, 'RS512')
+      encrypt_and_sign data
     end
 
     def logout
