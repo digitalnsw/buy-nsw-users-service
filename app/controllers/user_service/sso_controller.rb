@@ -42,8 +42,8 @@ module UserService
 
     def generate_token
       data = {
-        email: current_user.email,
-        sub: current_user.uuid,
+        email: current_user&.email,
+        sub: current_user&.uuid,
         iss: 'SUPPLIER_HUB',
         iat: Time.now.to_i,
         exp: Time.now.to_i + 30,
