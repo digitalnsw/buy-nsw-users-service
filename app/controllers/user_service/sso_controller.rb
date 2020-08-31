@@ -81,8 +81,13 @@ module UserService
     end
 
     def sync
-      raise_error unless loginURL.present?
-      soft_redirect loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
+      if current_user.present?
+        raise_error unless loginURL.present?
+        soft_redirect loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
+      else
+        raise_error unless redirectString.present?
+        redirect_to redirectString
+      end
     end
 
     def signup
