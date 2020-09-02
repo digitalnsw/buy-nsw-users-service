@@ -37,7 +37,7 @@ module UserService
     end
 
     def check_impersonating
-      raise MethodNotAllowed.new('SSO does not work in impersonating mode') if current_user != true_user
+      raise SharedModules::MethodNotAllowed.new('SSO does not work in impersonating mode') if current_user != true_user
     end
 
     def generate_token
