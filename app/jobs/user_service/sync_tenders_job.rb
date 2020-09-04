@@ -57,9 +57,12 @@ module UserService
         request['authority'] = host
         request['pragma'] = 'no-cache'
         request['cache-control'] = 'no-cache'
+        request['User-Agent'] = 'Supplier hub'
         response = http.request request
       end
-      user.update_attributes!(uuid: JSON.parse(response.body)['registeredUserUUID']) unless user.uuid
+      result = JSON.parse(response.body)
+      user.update_attributes!(uuid: result['registeredUserUUID']) unless user.uuid
+      raise result['errors'] if result['errors'].present?
     end
   end
 end
