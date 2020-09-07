@@ -102,5 +102,9 @@ module UserService
     def profile
       redirect_to '/ict/account/settings'
     end
+
+    def forgot_password
+      redirect_to '/ict/forgot-password'
+    end
   end
 end

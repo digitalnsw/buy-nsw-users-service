@@ -9,6 +9,7 @@ UserService::Engine.routes.draw do
     get :sync, on: :collection
     get :signup, on: :collection
     get :profile, on: :collection
+    get 'forgot-password', action: :forgot_password, on: :collection
   end
 
   resources :users do
