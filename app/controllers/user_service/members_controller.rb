@@ -9,7 +9,7 @@ module UserService
     end
 
     def index
-      @members = ::User.where(seller_id: current_user.seller_id).where.not(seller_id: nil)
+      @members = ::User.where("? = any(seller_ids)", current_user.seller_id).where.not(seller_id: nil)
       render json: serializer.index
     end
 
@@ -17,6 +17,8 @@ module UserService
       raise SharedModules::MethodNotAllowed unless current_user.is_seller? && current_user.seller_id
       @member = ::User.new(member_params)
       @member.seller_id = current_user.seller_id
+      @member.seller_ids = [current_user.seller_id]
+      @member.has_password = false
       @member.roles = ['seller']
       @member.password = @member.password_confirmation = SecureRandom.hex(32)
       @member.skip_confirmation_notification!

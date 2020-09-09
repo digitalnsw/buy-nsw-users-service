@@ -15,21 +15,32 @@ module UserService
       UserService::UserSerializer.new(user: @user, users: @users)
     end
 
-    def update_seller
-      ::User.find(params[:id])
-                       .update_attributes!(seller_id: params[:seller_id])
-    end
-
     def index
       if params[:current]
         render json: serializer.show
       end
     end
 
+    def update_seller
+      raise "Only superadmin may remove users" unless service_user.is_superadmin?
+
+      user = ::User.find_by(id: params[:id])
+      raise "User already has a company" if user&.seller_id.present?
+
+      user.update_columns(seller_id: params[:seller_id], seller_ids: [params[:seller_id]]) if user.present?
+
+      render json: { message: 'User assigned to supplier' }, status: :accepted
+    end
+
     def remove_from_supplier
       raise "Only superadmin may remove users" unless service_user.is_superadmin?
+
       user = ::User.find_by(id: params[:id])
-      user.update_column(:seller_id, nil) if user.present?
+      raise "User has multiple companies" if (user.seller_ids || []).size > 1
+
+      if user.present?
+        user.update_columns(seller_id: nil, seller_ids: [])
+      end
       render json: { message: 'User successfully removed from supplier' }, status: :accepted
     end
 
@@ -156,6 +167,7 @@ module UserService
         else
           user = ::User.new(
             email: params[:email],
+            has_password: true,
             full_name: params[:full_name],
             password: params[:password],
             password_confirmation: params[:password],
@@ -195,8 +207,19 @@ module UserService
         render json: { errors: [{email: "Email is already confirmed"}] }, status: :unprocessable_entity
       else
         logout_user current_user
-        @user.send_confirmation_instructions
-        @user.update_column(:confirmation_sent_at, Time.now)
+
+        if @user.confirmation_sent_at < 2.weeks.ago
+          @user.update_columns(confirmation_token: SecureRandom.base58(20), confirmation_sent_at: Time.now)
+        end
+
+        if @user.invited?
+          mailer = SellerInvitationMailer.with(user: @user)
+          mailer.seller_invitation_email.deliver_later
+        else
+          @user.send_confirmation_instructions
+          @user.update_column(:confirmation_sent_at, Time.now)
+        end
+
         log_user_event!("User asked to resed confirmation")
         render json: { message: 'Instructions email is sent' }, status: :accepted
       end
@@ -214,6 +237,7 @@ module UserService
       else
         logout_user current_user
         @user.reset_password(params[:password], params[:password])
+        @user.update_column(:has_password, true)
         login_user @user
         log_user_event!("User updated lost password")
         render json: { message: 'Password updated' }, status: :accepted
@@ -235,6 +259,7 @@ module UserService
         @user = ::User.new(
           full_name: @waiting_seller.contact_name,
           email: @waiting_seller.email,
+          has_password: true,
           password: params[:password],
           password_confirmation: params[:password],
           roles: ['seller'],
@@ -242,7 +267,7 @@ module UserService
         )
         if @user.save
           seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id, @user.id
-          @user.update_attributes!(seller_id: seller_id)
+          @user.update_attributes!(seller_id: seller_id, seller_ids: [seller_id])
           log_invitation_event!
           login_user @user
           render json: { message: 'Application started' }, status: :accepted
@@ -266,7 +291,7 @@ module UserService
         ::User.transaction do
           @user.confirm
           @user.reset_password(params[:password], params[:password])
-          @user.update_attributes!(full_name: params[:full_name])
+          @user.update_attributes!(full_name: params[:full_name], has_password: true)
         end
         log_invitation_event!
         login_user @user

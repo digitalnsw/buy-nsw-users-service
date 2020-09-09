@@ -6,7 +6,7 @@ module UserService
 
     def perform user_id
       user = ::User.find user_id.to_i
-      return unless user.is_seller?
+      return unless user.is_seller? && user.confirmed?
       name = user.full_name || ''
       firstname = name.partition(' ').first
       firstname = 'Firstname' if firstname.blank?

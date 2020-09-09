@@ -3,7 +3,7 @@ module UserService
     def perform
       reminded = 0
 
-      User.where.not(confirmed_at: nil).each do |user|
+      User.where(uuid: nil, seller_id: nil).where.not(confirmed_at: nil).each do |user|
 
         next unless user.is_seller? && user.seller_id.nil?
 
