@@ -115,7 +115,7 @@ module UserService
           end
         end
 
-        UserSerializer::SyncTendersJob.perform_later @user.id
+        UserService::SyncTendersJob.perform_later @user.id
 
         sign_in(@user, bypass: true)
         reset_session_user @user
@@ -146,7 +146,7 @@ module UserService
           end
         end
 
-        UserSerializer::SyncTendersJob.perform_later @user.id
+        UserService::SyncTendersJob.perform_later @user.id
 
         sign_in(@user, bypass: true)
         reset_session_user @user
@@ -317,7 +317,7 @@ module UserService
 
       logout_user current_user
       login_user @user      
-      UserSerializer::SyncTendersJob.perform_later @user.id
+      UserService::SyncTendersJob.perform_later @user.id
       log_user_event!("User confirmed email")
       redirect_to "/ict/success/email_confirmation"
     end
