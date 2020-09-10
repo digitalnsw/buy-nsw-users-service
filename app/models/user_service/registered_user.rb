@@ -19,6 +19,10 @@ module UserService
 
         next if row['Suspended'].to_i == 1
 
+        u = ::User.find_by(uuid: row['RegisteredUserUUID'])
+
+        next if u.present?
+
         u = ::User.find_or_initialize_by(email: row['Email'].downcase)
 
         u.uuid = ru.uuid
