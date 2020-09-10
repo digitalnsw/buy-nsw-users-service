@@ -3,6 +3,7 @@ module UserService
     def perform
       reminded = 0
 
+      # Unconfirmed users who are not invited as team member or imported from tenders
       User.where(uuid: nil, seller_id: nil).where.not(confirmed_at: nil).each do |user|
 
         next unless user.is_seller? && user.seller_id.nil?

@@ -22,14 +22,7 @@ module UserService
     end
 
     def update_seller
-      raise "Only superadmin may remove users" unless service_user.is_superadmin?
-
-      user = ::User.find_by(id: params[:id])
-      raise "User already has a company" if user&.seller_id.present?
-
-      user.update_columns(seller_id: params[:seller_id], seller_ids: [params[:seller_id]]) if user.present?
-
-      render json: { message: 'User assigned to supplier' }, status: :accepted
+      ::User.find(params[:id]).update_attributes!(seller_id: params[:seller_id].to_i)
     end
 
     def remove_from_supplier
