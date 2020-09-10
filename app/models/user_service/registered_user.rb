@@ -43,7 +43,6 @@ module UserService
         end
 
         u.skip_confirmation_notification!
-        u.skip_sync = true
         u.save!
       end
     end

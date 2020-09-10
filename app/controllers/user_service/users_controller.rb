@@ -94,7 +94,9 @@ module UserService
       unless @user&.valid_password?(params[:user][:currentPassword])
         render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
       else
-        @user.update_attributes!(full_name: params[:user][:full_name]) if @user.full_name != params[:user][:full_name]
+        if @user.full_name != params[:user][:full_name]
+          @user.update_attributes!(full_name: params[:user][:full_name])
+        end
 
         if (@user.unconfirmed_email || @user.email) != params[:user][:email]
 
@@ -112,6 +114,8 @@ module UserService
             return
           end
         end
+
+        UserSerializer::SyncTendersJob.new.perform @user.id
 
         sign_in(@user, bypass: true)
         reset_session_user @user
@@ -141,6 +145,8 @@ module UserService
             return
           end
         end
+
+        UserSerializer::SyncTendersJob.new.perform @user.id
 
         sign_in(@user, bypass: true)
         reset_session_user @user
@@ -311,6 +317,7 @@ module UserService
 
       logout_user current_user
       login_user @user      
+      UserSerializer::SyncTendersJob.new.perform @user.id
       log_user_event!("User confirmed email")
       redirect_to "/ict/success/email_confirmation"
     end
