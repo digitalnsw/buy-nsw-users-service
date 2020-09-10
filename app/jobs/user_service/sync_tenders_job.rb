@@ -32,17 +32,17 @@ module UserService
         "firstname": firstname,
         "surname": lastname,
         "email": user.email,
-        "companyName": version&.name || "PTY LTD",
+        "companyName": version&.name || " ",
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
         "ABN": version&.abn || "51824753556",
         "age": "1",
-        "addressLine1": version&.addresses&.first&.adress || "1",
+        "addressLine1": version&.addresses&.first&.adress || " ",
         "addressLine2": version&.addresses&.first&.address_2 || "",
-        "city": version&.addresses&.first&.suburb || "Sydney",
-        "state": version&.addresses&.first&.state || "NSW",
-        "postcode": version&.addresses&.first&.postcode || "2000",
+        "city": version&.addresses&.first&.suburb || " ",
+        "state": version&.addresses&.first&.state || " ",
+        "postcode": version&.addresses&.first&.postcode || "",
         "country": version&.addresses&.first&.country || "Australia",
-        "companyPhone": version&.addresses&.first&.contact_phone || "0"
+        "companyPhone": version&.addresses&.first&.contact_phone || " "
       }
       hash['sub'] = user.uuid if user.uuid
       token = encrypt_and_sign(hash)
