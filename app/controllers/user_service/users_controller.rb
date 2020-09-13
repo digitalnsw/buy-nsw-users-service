@@ -21,8 +21,13 @@ module UserService
       end
     end
 
+    # This method is called when admin assignes a user or when they iniate a supplier
     def update_seller
-      ::User.find(params[:id]).update_attributes!(seller_id: params[:seller_id].to_i)
+      u = ::User.find(params[:id])
+      s_id = params[:seller_id].to_i
+      has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
+      u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
+      u.grant! sid, :owner unless has_owners
     end
 
     def remove_from_supplier
@@ -208,15 +213,15 @@ module UserService
         logout_user current_user
 
         if @user.confirmation_sent_at < 2.weeks.ago
-          @user.update_columns(confirmation_token: SecureRandom.base58(20), confirmation_sent_at: Time.now)
+          @user.update_columns(confirmation_token: SecureRandom.base58(20))
         end
+        @user.update_column(:confirmation_sent_at, Time.now)
 
         if @user.invited?
           mailer = SellerInvitationMailer.with(user: @user)
           mailer.seller_invitation_email.deliver_later
         else
           @user.send_confirmation_instructions
-          @user.update_column(:confirmation_sent_at, Time.now)
         end
 
         log_user_event!("User asked to resed confirmation")
@@ -265,8 +270,9 @@ module UserService
           confirmed_at: Time.now,
         )
         if @user.save
-          seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id, @user.id
+          seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id
           @user.update_attributes!(seller_id: seller_id, seller_ids: [seller_id])
+          @user.grant!(seller_id, :owner)
           log_invitation_event!
           login_user @user
           render json: { message: 'Application started' }, status: :accepted
@@ -336,6 +342,16 @@ module UserService
       rescue => exception
         Airbrake.notify_sync exception
         redirect_to "/ict/failure/manager_approved"
+      end
+    end
+
+    def unsubscribe
+      @user = ::User.find_by(email: params[:email])
+      if @user && Digest::SHA2.hexdigest(@user.email + ENV['OPTOUT_SECRET']) == params[:token]
+        @user.update_attributes!(opted_out: true)
+        redirect_to "/ict/success/unsubscribe"
+      else
+        redirect_to "/ict/failure/unsubscribe"
       end
     end
 

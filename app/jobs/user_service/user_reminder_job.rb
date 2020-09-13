@@ -6,6 +6,8 @@ module UserService
       # Unconfirmed users who are not invited as team member or imported from tenders
       User.where(uuid: nil, seller_id: nil).where.not(confirmed_at: nil).each do |user|
 
+        next if user.opted_out? || user.suspended?
+
         next unless user.is_seller? && user.seller_id.nil?
 
         d = (Date.today - user.confirmed_at.to_date).to_i

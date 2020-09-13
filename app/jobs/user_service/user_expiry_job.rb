@@ -5,9 +5,9 @@ module UserService
       about_to_expire = 0
       expired = 0
 
-      User.where(confirmed_at: nil).each do |user|
+      User.where(uuid: nil, seller_id: nil, confirmed_at: nil).each do |user|
 
-        next if user.confirmed?
+        next if user.confirmed? || user.opted_out? || user.suspended?
 
         d = (Date.today - user.confirmation_sent_at.to_date).to_i
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_08_26_204458) do
+ActiveRecord::Schema.define(version: 2020_09_12_125124) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_trgm"
@@ -126,6 +126,16 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
     t.datetime "updated_at", null: false
     t.boolean "seen"
     t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
+  create_table "panel_vendors", force: :cascade do |t|
+    t.string "uuid"
+    t.json "fields"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "email", null: false
+    t.string "abn", null: false
+    t.index ["uuid"], name: "index_panel_vendors_on_uuid", unique: true
   end
 
   create_table "problem_reports", force: :cascade do |t|
@@ -344,6 +354,15 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
     t.index ["seller_id"], name: "index_products_on_seller_id"
   end
 
+  create_table "registered_users", force: :cascade do |t|
+    t.string "uuid"
+    t.json "fields"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "email"
+    t.index ["uuid"], name: "index_registered_users_on_uuid", unique: true
+  end
+
   create_table "seller_field_statuses", force: :cascade do |t|
     t.string "field"
     t.string "status"
@@ -488,6 +507,9 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
     t.integer "profile_address_index", default: 0
     t.json "schemes_and_panels", default: []
     t.string "contact_position"
+    t.string "abn_exempt", default: "non-exempt"
+    t.string "abn_exempt_reason"
+    t.index ["abn"], name: "index_seller_versions_on_abn"
     t.index ["discarded_at"], name: "index_seller_versions_on_discarded_at"
     t.index ["edited_by_id"], name: "index_seller_versions_on_edited_by_id"
     t.index ["next_version_id"], name: "index_seller_versions_on_next_version_id"
@@ -498,7 +520,7 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "discarded_at"
-    t.integer "owner_id"
+    t.string "uuid"
     t.index ["discarded_at"], name: "index_sellers_on_discarded_at"
   end
 
@@ -580,6 +602,11 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
     t.integer "failed_count"
     t.string "full_name"
     t.string "uuid"
+    t.boolean "has_password", default: false
+    t.integer "seller_ids", default: [], array: true
+    t.boolean "suspended", default: false
+    t.boolean "opted_out", default: false
+    t.json "permissions", default: {}
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -627,5 +654,4 @@ ActiveRecord::Schema.define(version: 2020_08_26_204458) do
   add_foreign_key "seller_versions", "seller_versions", column: "next_version_id"
   add_foreign_key "seller_versions", "sellers"
   add_foreign_key "seller_versions", "users", column: "edited_by_id"
-  add_foreign_key "sellers", "users", column: "owner_id"
 end

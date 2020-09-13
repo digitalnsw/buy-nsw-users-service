@@ -3,6 +3,8 @@ UserService::Engine.routes.draw do
   post '/login', to: 'authentication#login'
   post '/logout', to: 'authentication#logout'
 
+  get '/unsubscribe', to: 'users#unsubscribe'
+
   resources :sso do
     get :login, on: :collection
     get :logout, on: :collection
