@@ -12,9 +12,6 @@ module UserService
       firstname = 'Firstname' if firstname.blank?
       lastname = name.partition(' ').last
       lastname = 'Lastname' if lastname.blank?
-      password = SecureRandom.base58(39) + rand(10).to_s
-      password.gsub!(/#{firstname}/i, '')
-      password.gsub!(/#{lastname}/i, '')
       host = URI(ENV['ETENDERING_URL']).host
       version = user.seller&.approved_version
       sme_hash = {
@@ -45,10 +42,17 @@ module UserService
         "postcode": version&.addresses&.first&.postcode || "Postcode",
         "country": version&.addresses&.first&.country || "Australia",
         "companyPhone": version&.addresses&.first&.contact_phone || "000",
-        "password": password
       }
 
-      hash['sub'] = user.uuid if user.uuid
+      if user.uuid
+        hash['sub'] = user.uuid
+      else
+        password = SecureRandom.base58(39) + rand(10).to_s
+        password.gsub!(/#{firstname}/i, '')
+        password.gsub!(/#{lastname}/i, '')
+        password.gsub!(/#{user.email}/i, '')
+        hash['password'] = password
+      end
       token = encrypt_and_sign(hash)
       uri = if user.uuid
         URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.update&supplierHubDetails='+token)
