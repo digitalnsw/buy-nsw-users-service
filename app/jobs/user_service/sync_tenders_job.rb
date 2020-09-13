@@ -13,7 +13,7 @@ module UserService
       lastname = name.partition(' ').last
       lastname = 'Lastname' if lastname.blank?
       host = URI(ENV['ETENDERING_URL']).host
-      version = user.seller&.last_version
+      version = user.seller&.approved_version
       sme_hash = {
         'sole' => '0-19',
         '2to4' => '0-19',
