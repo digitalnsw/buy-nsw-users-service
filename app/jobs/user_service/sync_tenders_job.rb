@@ -40,7 +40,7 @@ module UserService
         "city": version&.addresses&.first&.suburb || "City",
         "state": version&.addresses&.first&.state || "State",
         "postcode": version&.addresses&.first&.postcode || "Postcode",
-        "country": version&.addresses&.first&.country || "Australia",
+        "country": ISO3166::Country.new(version&.addresses&.first&.country || "AU").name,
         "companyPhone": version&.addresses&.first&.contact_phone || "000",
       }
 

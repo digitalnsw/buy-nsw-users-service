@@ -36,7 +36,7 @@ module UserService
       s_id = params[:seller_id].to_i
       has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
-      u.grant! sid, :owner unless has_owners
+      u.grant! s_id, :owner unless has_owners
     end
 
     def remove_from_supplier
