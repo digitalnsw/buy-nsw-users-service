@@ -9,6 +9,10 @@ module UserService
     end
 
     def redirectString
+      # FIXME : This check is to detect loops
+      if params[:redirectString].to_s.length > 2048
+        raise "An error raised signing you in, please contact us at buy.nsw@customerservice.nsw.gov.au!"
+      end
       params[:redirectString]
     end
 

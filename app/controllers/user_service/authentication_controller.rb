@@ -77,6 +77,8 @@ module UserService
             full_name: me.full_name,
             roles: me.roles.map(&:to_s),
             seller_id: me.seller_id,
+            seller_ids: me.seller_ids,
+            privileges: me.privileges(me.seller_id) || [],
             seller_live: me.seller_is_live?,
             buyer_id: me.buyer_id,
             can_buy: me.can_buy?

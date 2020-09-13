@@ -6,12 +6,15 @@ module UserService
 
     def perform user_id
       user = ::User.find user_id.to_i
-      return unless user.is_seller? && user.confirmed?
+      return unless user.confirmed?
       name = user.full_name || ''
       firstname = name.partition(' ').first
       firstname = 'Firstname' if firstname.blank?
       lastname = name.partition(' ').last
       lastname = 'Lastname' if lastname.blank?
+      password = SecureRandom.base58(39) + rand(10).to_s
+      password.gsub!(/#{firstname}/i, '')
+      password.gsub!(/#{lastname}/i, '')
       host = URI(ENV['ETENDERING_URL']).host
       version = user.seller&.approved_version
       sme_hash = {
@@ -34,7 +37,7 @@ module UserService
         "email": user.email,
         "companyName": version&.name || "Business name",
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
-        "ABN": version&.abn || "51824753556",
+        "ABN": version&.abn || "",
         "addressLine1": version&.addresses&.first&.adress || "Address",
         "addressLine2": version&.addresses&.first&.address_2 || "",
         "city": version&.addresses&.first&.suburb || "City",
@@ -42,7 +45,7 @@ module UserService
         "postcode": version&.addresses&.first&.postcode || "Postcode",
         "country": version&.addresses&.first&.country || "Australia",
         "companyPhone": version&.addresses&.first&.contact_phone || "000",
-        "password": SecureRandom.base58(30),
+        "password": password
       }
 
       hash['sub'] = user.uuid if user.uuid
