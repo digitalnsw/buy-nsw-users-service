@@ -9,15 +9,6 @@ module UserService
     end
 
     def redirectString
-      # FIXME : This check is to detect loops
-      if params[:redirectString].to_s.length > 2048
-        Airbrake.notify_sync("redirectString too long!", {
-          redirectString: params[:redirectString],
-          loginURL: loginURL,
-          current_user: current_user&.id,
-        })
-        raise_error
-      end
       params[:redirectString]
     end
 
@@ -35,6 +26,14 @@ module UserService
         uri = URI.parse(redirectString)
         raise_error unless uri.scheme == 'https'
         raise_error unless uri.host.ends_with?('.nsw.gov.au')
+        # FIXME : This check is to detect loops
+        if redirectString.length > 2048
+          Airbrake.notify_sync("redirectString too long!", {
+            redirectString: redirectString,
+            current_user: current_user&.id,
+          })
+          raise_error
+        end
       end
       
       if loginURL.present?
@@ -42,6 +41,14 @@ module UserService
         uri = URI.parse(loginURL)
         raise_error unless uri.scheme == 'https'
         raise_error unless uri.host.ends_with?('.nsw.gov.au')
+        # FIXME : This check is to detect loops
+        if loginURL.length > 2048
+          Airbrake.notify_sync("loginURL too long!", {
+            loginURL: loginURL,
+            current_user: current_user&.id,
+          })
+          raise_error
+        end
       end
     end
 

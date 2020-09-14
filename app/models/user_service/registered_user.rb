@@ -27,7 +27,8 @@ module UserService
           u = ::User.find_or_initialize_by(email: row['Email'].downcase)
 
           u.uuid = ru.uuid
-          u.full_name ||= (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).strip
+          u.full_name ||= (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
+            gsub(/[()]/, '').gsub(/ +/, ' ').strip
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
           u.password = u.password_confirmation = SecureRandom.hex(32) unless u.persisted?
 
@@ -48,7 +49,7 @@ module UserService
         rescue => e
           Airbrake.notify_sync(e.message, {
             RUUUID: row['RegisteredUserUUID'],
-            trace: e.backtrace[0..5],
+            trace: e.backtrace.select{|l|l.match?(/buy-nsw/)},
           })
         end
       end
