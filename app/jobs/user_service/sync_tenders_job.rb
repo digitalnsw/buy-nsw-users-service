@@ -34,7 +34,7 @@ module UserService
         "email": user.email,
         "companyName": version&.name || "Business name",
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
-        "ABN": version&.abn || "",
+        "ABN": version&.abn&.gsub(' ', '') || "",
         "addressLine1": version&.addresses&.first&.adress || "Address",
         "addressLine2": version&.addresses&.first&.address_2 || "",
         "city": version&.addresses&.first&.suburb || "City",
