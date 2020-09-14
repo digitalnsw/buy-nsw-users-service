@@ -100,7 +100,7 @@ module UserService
     end
 
     def seller_owners
-      @users = ::User.where("#{params[:seller_id].to_i} = any(seller_ids)")
+      @users = ::User.where("? = any(seller_ids)", params[:seller_id].to_i).to_a
       render json: serializer.index
     end
 
