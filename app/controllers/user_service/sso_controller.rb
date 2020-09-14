@@ -11,7 +11,12 @@ module UserService
     def redirectString
       # FIXME : This check is to detect loops
       if params[:redirectString].to_s.length > 2048
-        raise "An error raised signing you in, please contact us at buy.nsw@customerservice.nsw.gov.au!"
+        Airbrake.notify_sync("redirectString too long!", {
+          redirectString: params[:redirectString]
+          loginURL: loginURL,
+          current_user: current_user&.id,
+        })
+        raise_error
       end
       params[:redirectString]
     end
