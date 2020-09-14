@@ -228,7 +228,11 @@ module UserService
 
         if @user.invited?
           mailer = SellerInvitationMailer.with(user: @user)
-          mailer.seller_invitation_email.deliver_later
+          if @user.uuid.present?
+            mailer.tender_invitation_email.deliver_later
+          else
+            mailer.seller_invitation_email.deliver_later
+          end
         else
           @user.send_confirmation_instructions
         end

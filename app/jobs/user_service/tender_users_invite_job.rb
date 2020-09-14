@@ -13,7 +13,7 @@ module UserService
           user.update_columns(confirmation_token: SecureRandom.base58(20), confirmation_sent_at: Time.now)
 
           mailer = SellerInvitationMailer.with(user: user)
-          mailer.seller_invitation_email.deliver_later
+          mailer.tender_invitation_email.deliver_later
 
           reminded += 1
         end
