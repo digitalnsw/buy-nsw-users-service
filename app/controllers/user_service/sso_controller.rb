@@ -12,7 +12,7 @@ module UserService
       # FIXME : This check is to detect loops
       if params[:redirectString].to_s.length > 2048
         Airbrake.notify_sync("redirectString too long!", {
-          redirectString: params[:redirectString]
+          redirectString: params[:redirectString],
           loginURL: loginURL,
           current_user: current_user&.id,
         })
