@@ -15,7 +15,8 @@ module UserService
         currentPassword: '',
         roles: user.roles.to_a,
         seller_id: user.seller_id,
-        confirmed: user.unconfirmed_email.nil? || user.email == user.unconfirmed_email
+        confirmed: user.unconfirmed_email.nil? || user.email == user.unconfirmed_email,
+        opted_out: user.opted_out
       }
     end
 

@@ -108,9 +108,9 @@ module UserService
       unless @user&.valid_password?(params[:user][:currentPassword])
         render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
       else
-        if @user.full_name != params[:user][:full_name]
-          @user.update_attributes!(full_name: params[:user][:full_name])
-        end
+        @user.opted_out = params[:user][:opted_out].to_s == 'true'
+        @user.full_name = params[:user][:full_name]
+        @user.save! if @user.has_changes_to_save?
 
         if (@user.unconfirmed_email || @user.email) != params[:user][:email]
 
@@ -361,6 +361,7 @@ module UserService
     def unsubscribe
       @user = ::User.find_by(email: params[:email])
       if @user && Digest::SHA2.hexdigest(@user.email + ENV['OPTOUT_SECRET']) == params[:token]
+        log_user_event! "Unsubscribed"
         @user.update_attributes!(opted_out: true)
         redirect_to "/ict/success/unsubscribe"
       else
