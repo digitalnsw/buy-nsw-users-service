@@ -10,17 +10,14 @@ module UserService
 
     def perform user_id
       user = ::User.find user_id.to_i
-      return unless user.confirmed?
       name = user.full_name || ''
-      firstname = name.partition(' ').first
-      firstname = 'Firstname' if firstname.blank?
-      lastname = name.partition(' ').last
-      lastname = 'Lastname' if lastname.blank?
-      # out side au is not in the list by purpose
+      firstname = present_or(name.partition(' ').first, 'Firstname')
+      lastname = present_or(name.partition(' ').last, 'Lastname')
 
       host = URI(ENV['ETENDERING_URL']).host
       version = user.seller&.live? ? user.seller.latest_version : nil
 
+      # out side au is not in the list by purpose
       state_hash = {
         'nsw' => 'NSW',
         'vic' => 'VIC',

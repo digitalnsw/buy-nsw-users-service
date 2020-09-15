@@ -24,6 +24,7 @@ module UserService
       @member.skip_confirmation_notification!
 
       if @member.save
+        UserService::SyncTendersJob.perform_later @member.id
         mailer = SellerInvitationMailer.with(user: @member)
         mailer.seller_invitation_email.deliver_later
         render json: serializer.show, status: :created

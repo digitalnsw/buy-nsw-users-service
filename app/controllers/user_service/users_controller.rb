@@ -187,6 +187,7 @@ module UserService
             roles: [params[:type]]
           )
           if user.save
+            UserService::SyncTendersJob.perform_later user.id
             render json: { message: 'User is created' }, status: :accepted
           else
             render json: { errors: [
