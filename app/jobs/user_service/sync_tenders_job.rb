@@ -5,7 +5,7 @@ module UserService
     include SharedModules::Encrypt
 
     def present_or first, second
-      first.strip.present? ? first.strip : second
+      first&.strip.present? ? first&.strip : second
     end
 
     def perform user_id
