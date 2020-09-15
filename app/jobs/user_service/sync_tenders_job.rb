@@ -34,13 +34,13 @@ module UserService
         "email": user.email,
         "companyName": version&.name || "Business name",
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
-        "ABN": version&.abn&.gsub(' ', '') || "",
+        "ABN": "", #version&.abn&.gsub(' ', '') || "",
         "addressLine1": version&.addresses&.first&.adress || "Address",
         "addressLine2": version&.addresses&.first&.address_2 || "",
         "city": version&.addresses&.first&.suburb || "City",
         "state": version&.addresses&.first&.state || "State",
         "postcode": version&.addresses&.first&.postcode || "Postcode",
-        "country": ISO3166::Country.new(version&.addresses&.first&.country || "AU").name,
+        "country": ISO3166::Country.new(version&.addresses&.first&.country)&.name || 'Australia',
         "companyPhone": version&.addresses&.first&.contact_phone || "000",
       }
 
