@@ -33,6 +33,7 @@ module UserService
       }
       state = state_hash[version&.addresses&.first&.state] || "NSW"
       country = ISO3166::Country.new(version&.addresses&.first&.country)&.name&.upcase || 'AUSTRALIA'
+      abn = ABN.valid?(version&.abn) ? version&.abn.gsub(' ', '') : ''
 
       sme_hash = {
         'sole' => '0-19',
@@ -54,7 +55,7 @@ module UserService
         "email": user.email,
         "companyName": present_or(version&.name, "Business name"),
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
-        "ABN": "", #version&.abn&.gsub(' ', '') || "",
+        "ABN": abn,
         "addressLine1": present_or(version&.addresses&.first&.adress, "Address"),
         "addressLine2": version&.addresses&.first&.address_2 || "",
         "city": present_or(version&.addresses&.first&.suburb, "City"),
