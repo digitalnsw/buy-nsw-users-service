@@ -25,6 +25,7 @@ module UserService
       seller_id = params[:seller_id].to_i
       if @user&.is_seller? && @user.seller_ids.include?(seller_id)
         @user.update_attributes(seller_id: seller_id)
+        UserService::SyncTendersJob.perform_later @user.id
       else
         raise SharedModules::NotAuthorized.new
       end
@@ -36,6 +37,7 @@ module UserService
       s_id = params[:seller_id].to_i
       has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
+      UserService::SyncTendersJob.perform_later u.id
       u.grant! s_id, :owner unless has_owners
     end
 
@@ -284,6 +286,7 @@ module UserService
           confirmed_at: Time.now,
         )
         if @user.save
+          UserService::SyncTendersJob.perform_later @user.id
           seller_id = SharedResources::RemoteWaitingSeller.initiate_seller @waiting_seller.id
           @user.update_attributes!(seller_id: seller_id, seller_ids: [seller_id])
           @user.grant!(seller_id, :owner)
