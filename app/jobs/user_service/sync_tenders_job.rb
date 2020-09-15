@@ -4,6 +4,10 @@ module UserService
   class SyncTendersJob < SharedModules::ApplicationJob
     include SharedModules::Encrypt
 
+    def present_or first, second
+      first.present? ? first : second
+    end
+
     def perform user_id
       user = ::User.find user_id.to_i
       return unless user.confirmed?
@@ -12,8 +16,24 @@ module UserService
       firstname = 'Firstname' if firstname.blank?
       lastname = name.partition(' ').last
       lastname = 'Lastname' if lastname.blank?
+      # out side au is not in the list by purpose
+
       host = URI(ENV['ETENDERING_URL']).host
       version = user.seller.live? ? user.seller.latest_version : nil
+
+      state_hash = {
+        'nsw' => 'NSW',
+        'vic' => 'VIC',
+        'qld' => 'QLD',
+        'sa'  => 'SA',
+        'act' => 'ACT',
+        'wa'  => 'WA',
+        'nt'  => 'NT',
+        'tas' => 'TAS',
+      }
+      state = state_hash[version&.addresses&.first&.state] || "NSW"
+      country = ISO3166::Country.new(version&.addresses&.first&.country)&.name&.upcase || 'AUSTRALIA'
+
       sme_hash = {
         'sole' => '0-19',
         '2to4' => '0-19',
@@ -32,16 +52,16 @@ module UserService
         "firstname": firstname,
         "surname": lastname,
         "email": user.email,
-        "companyName": version&.name || "Business name",
+        "companyName": present_or(version&.name, "Business name"),
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
         "ABN": "", #version&.abn&.gsub(' ', '') || "",
-        "addressLine1": version&.addresses&.first&.adress || "Address",
+        "addressLine1": present_or(version&.addresses&.first&.adress, "Address"),
         "addressLine2": version&.addresses&.first&.address_2 || "",
-        "city": version&.addresses&.first&.suburb || "City",
-        "state": version&.addresses&.first&.state || "State",
-        "postcode": version&.addresses&.first&.postcode || "Postcode",
-        "country": ISO3166::Country.new(version&.addresses&.first&.country)&.name || 'Australia',
-        "companyPhone": version&.addresses&.first&.contact_phone || "000",
+        "city": present_or(version&.addresses&.first&.suburb, "City"),
+        "postcode": present_or(version&.addresses&.first&.postcode, "Postcode"),
+        "state": country == 'AUSTRALIA' ? state : 'Outside Australia',
+        "country": country,
+        "companyPhone": present_or(version&.addresses&.first&.contact_phone, "000"),
       }
 
       if user.uuid
