@@ -5,7 +5,7 @@ module UserService
     include SharedModules::Encrypt
 
     def present_or first, second
-      first.present? ? first : second
+      first.strip.present? ? first.strip : second
     end
 
     def perform user_id
@@ -19,7 +19,7 @@ module UserService
       # out side au is not in the list by purpose
 
       host = URI(ENV['ETENDERING_URL']).host
-      version = user.seller.live? ? user.seller.latest_version : nil
+      version = user.seller&.live? ? user.seller.latest_version : nil
 
       state_hash = {
         'nsw' => 'NSW',
@@ -61,7 +61,7 @@ module UserService
         "postcode": present_or(version&.addresses&.first&.postcode, "Postcode"),
         "state": country == 'AUSTRALIA' ? state : 'Outside Australia',
         "country": country,
-        "companyPhone": present_or(version&.addresses&.first&.contact_phone, "000"),
+        "companyPhone": present_or(version&.contact_phone, "000"),
       }
 
       if user.uuid

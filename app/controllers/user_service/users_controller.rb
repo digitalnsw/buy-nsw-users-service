@@ -112,6 +112,8 @@ module UserService
         @user.full_name = params[:user][:full_name]
         @user.save! if @user.has_changes_to_save?
 
+        UserService::SyncTendersJob.perform_later @user.id
+
         if (@user.unconfirmed_email || @user.email) != params[:user][:email]
 
           @user.email = params[:user][:email]
@@ -129,8 +131,6 @@ module UserService
           end
         end
 
-        UserService::SyncTendersJob.perform_later @user.id
-
         sign_in(@user, bypass: true)
         reset_session_user @user
         log_user_event!("User email/password updated")
@@ -143,6 +143,8 @@ module UserService
         render json: { errors: [{ password: 'Invalid Password' }] }, status: :unprocessable_entity
       else
         @user.update_attributes!(full_name: params[:full_name]) if @user.full_name != params[:full_name]
+
+        UserService::SyncTendersJob.perform_later @user.id
 
         if @user.email != params[:email]
           @user.email = params[:email]
@@ -159,8 +161,6 @@ module UserService
             return
           end
         end
-
-        UserService::SyncTendersJob.perform_later @user.id
 
         sign_in(@user, bypass: true)
         reset_session_user @user
@@ -311,6 +311,7 @@ module UserService
           @user.reset_password(params[:password], params[:password])
           @user.update_attributes!(full_name: params[:full_name], has_password: true)
         end
+        UserService::SyncTendersJob.perform_later @user.id
         log_invitation_event!
         login_user @user
         render json: { message: 'Invitation accepted' }, status: :accepted

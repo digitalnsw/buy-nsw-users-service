@@ -6,7 +6,7 @@ module UserService
       if now.wday.in?(1..5) && now.hour.in?(9..14)
         User.where.not(uuid: nil).
              where(confirmed_at: nil, opted_out: false, suspended: false).
-             order(:confirmation_sent_at).limit(24).each do |user|
+             order(:confirmation_sent_at).limit(120).each do |user|
 
           next if user.confirmation_sent_at > 4.weeks.ago
 
