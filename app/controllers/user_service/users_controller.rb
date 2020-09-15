@@ -46,7 +46,7 @@ module UserService
       raise "User has multiple companies" if (user.seller_ids || []).size > 1
 
       if user.present?
-        user.update_columns(seller_id: nil, seller_ids: [])
+        user.update_attributes!(seller_id: nil, seller_ids: [], permissions: {})
       end
       render json: { message: 'User successfully removed from supplier' }, status: :accepted
     end
@@ -224,7 +224,7 @@ module UserService
         if @user.confirmation_sent_at < 2.weeks.ago
           @user.update_columns(confirmation_token: SecureRandom.base58(20))
         end
-        @user.update_column(:confirmation_sent_at, Time.now)
+        @user.update_columns(confirmation_sent_at: Time.now)
 
         if @user.invited?
           mailer = SellerInvitationMailer.with(user: @user)
