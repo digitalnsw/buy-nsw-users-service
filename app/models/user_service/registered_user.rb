@@ -32,10 +32,10 @@ module UserService
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
           u.password = u.password_confirmation = SecureRandom.hex(32) unless u.persisted?
 
-          abn = row['ABN']
+          abn = row['ABN'].gsub('-', '')
           if abn.present? && ABN.valid?(abn)
             abn = ABN.new(abn).to_s
-            seller_id = ::SellerVersion.where(abn: abn, state: ['approved','pending']).first&.seller_id
+            seller_id = ::SellerVersion.where(abn: abn, state: ['draft', 'approved','pending']).first&.seller_id
             seller_id ||= ::SellerVersion.where(abn: abn, next_version_id: nil).first&.seller_id
 
             if seller_id.present? && u.seller_id != seller_id
