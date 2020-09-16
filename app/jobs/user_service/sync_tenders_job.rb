@@ -53,7 +53,7 @@ module UserService
         "companyName": present_or(version&.name, "Business name"),
         "SMEStatus": sme_hash[version&.number_of_employees.to_s] || "0-19",
         "ABN": abn,
-        "addressLine1": present_or(version&.addresses&.first&.adress, "Address"),
+        "addressLine1": present_or(version&.addresses&.first&.address, "Address"),
         "addressLine2": version&.addresses&.first&.address_2 || "",
         "city": present_or(version&.addresses&.first&.suburb, "City"),
         "postcode": present_or(version&.addresses&.first&.postcode, "Postcode"),
