@@ -36,7 +36,7 @@ module UserService
           if abn.present? && ABN.valid?(abn)
             abn = ABN.new(abn).to_s
             seller_id = ::SellerVersion.where(abn: abn, state: ['approved','pending']).first&.seller_id
-            seller_id ||= ::SellerVersion.where(abn: abn).where.not(state: 'archived', uuid: nil).first&.seller_id
+            seller_id ||= ::SellerVersion.where(abn: abn).where.not(state: 'archived').first&.seller_id
 
             if seller_id.present? && u.seller_id != seller_id
               u.seller_id ||= seller_id
