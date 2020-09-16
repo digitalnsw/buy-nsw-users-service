@@ -25,7 +25,7 @@ module UserService
       seller_id = params[:seller_id].to_i
       if @user&.is_seller? && @user.seller_ids.include?(seller_id)
         @user.update_attributes(seller_id: seller_id)
-        update_session_user(seller_id: seller.id)
+        #reset session user
         UserService::SyncTendersJob.perform_later @user.id
       else
         raise SharedModules::NotAuthorized.new
