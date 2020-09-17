@@ -30,12 +30,12 @@ UserService::Engine.routes.draw do
     post :update_lost_password, on: :collection
     post :remove_from_supplier, on: :member
 
+    get :seller_team, on: :collection
     post :switch_supplier, on: :collection
 
     get :confirm_email, on: :collection
     get :unlock_account, on: :collection
     get :approve_buyer, on: :collection
-    get :seller_owners, on: :collection
     get :get_by_id, on: :collection
     get :get_by_email, on: :collection
   end

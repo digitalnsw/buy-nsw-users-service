@@ -2,8 +2,8 @@ require_dependency "user_service/application_controller"
 
 module UserService
   class UsersController < UserService::ApplicationController
-    skip_before_action :verify_authenticity_token, raise: false, only: [:update_seller, :seller_owners, :destroy, :remove_from_supplier] 
-    before_action :authenticate_service, only: [:update_seller, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    skip_before_action :verify_authenticity_token, raise: false, only: [:update_seller, :destroy, :remove_from_supplier]
+    before_action :authenticate_service, only: [:update_seller, :seller_team, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_email
@@ -76,13 +76,13 @@ module UserService
     end
 
     def get_by_id
-      @users = ::User.where(id: params[:id])
-      render json: serializer.index
+      @user = ::User.where(id: params[:id]).first
+      render json: serializer.show
     end
 
     def get_by_email
-      @users = ::User.where(email: params[:email])
-      render json: serializer.index
+      @user = ::User.where(email: params[:email]).first
+      render json: serializer.show
     end
 
     def create
@@ -102,7 +102,7 @@ module UserService
       SharedResources::RemoteEvent.create_event(@user.id, 'User', current_user&.id || @user.id, 'Event::User', note)
     end
 
-    def seller_owners
+    def seller_team
       @users = ::User.where("? = any(seller_ids)", params[:seller_id].to_i).to_a
       render json: serializer.index
     end
