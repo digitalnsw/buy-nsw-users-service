@@ -295,11 +295,11 @@ module UserService
           login_user @user
           render json: { message: 'Application started' }, status: :accepted
         else
-           render json: { errors: [
-             @user.errors&.messages&.map{|k,v|
-               [k, k.to_s + ' ' + v.first.to_s]
-             }.to_h
-           ] }, status: :unprocessable_entity
+          render json: { errors: [
+            @user.errors&.messages&.map{|k,v|
+              [k, k.to_s + ' ' + v.first.to_s]
+            }.to_h
+          ] }, status: :unprocessable_entity
         end
       end
     end
