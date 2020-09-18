@@ -4,6 +4,28 @@ module UserService
   class SyncTendersJob < SharedModules::ApplicationJob
     include SharedModules::Encrypt
 
+    def post_token host, hash
+      token = encrypt_and_sign(hash)
+
+      uri = if user.uuid
+        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.update')
+      else
+        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.create')
+      end
+
+      https = Net::HTTP.new(uri.host, uri.port)
+      https.use_ssl = true
+      request = Net::HTTP::Post.new(uri.request_uri)
+      request.set_form_data({'supplierHubDetails' => token})
+      request['authority'] = host
+      request['pragma'] = 'no-cache'
+      request['cache-control'] = 'no-cache'
+      request['Authorization'] = 'Basic ' + ENV['ETENDERING_WAF_SECRET']
+      response = https.request request
+
+      JSON.parse(response.body)
+    end
+
     def present_or first, second
       first&.strip.present? ? first&.strip : second
     end
@@ -71,23 +93,10 @@ module UserService
         password.gsub!(/#{user.email}/i, '')
         hash['password'] = password
       end
-      token = encrypt_and_sign(hash)
-      uri = if user.uuid
-        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.update&supplierHubDetails='+token)
-      else
-        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.create&supplierHubDetails='+token)
-      end
-      response = nil
-      Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
-        request = Net::HTTP::Get.new uri
-        request['authority'] = host
-        request['pragma'] = 'no-cache'
-        request['cache-control'] = 'no-cache'
-        request['User-Agent'] = 'Supplier hub'
-        response = http.request request
-      end
-      result = JSON.parse(response.body)
-      user.update_attributes!(uuid: result['registeredUserUUID']) unless user.uuid
+
+      result = post_token host, hash
+      new_uuid = result['registeredUserUUID']
+      user.update_attributes!(uuid: uuid) if new_uuid.present? && user.uuid != new_uuid
       raise result['errors'] if result['errors'].present?
     end
   end
