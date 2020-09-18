@@ -2,8 +2,8 @@ require_dependency "user_service/application_controller"
 
 module UserService
   class UsersController < UserService::ApplicationController
-    skip_before_action :verify_authenticity_token, raise: false, only: [:update_seller, :destroy, :remove_from_supplier]
-    before_action :authenticate_service, only: [:update_seller, :seller_team, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :destroy, :remove_from_supplier]
+    before_action :authenticate_service, only: [:add_to_team, :seller_team, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_email
@@ -33,7 +33,7 @@ module UserService
     end
 
     # This method is called when admin assignes a user or when they iniate a supplier
-    def update_seller
+    def add_to_team
       u = ::User.find(params[:id])
       s_id = params[:seller_id].to_i
       has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
@@ -306,7 +306,7 @@ module UserService
 
     def accept_invitation
       if @user.nil?
-        raise SharedModules::AlertError.new("Token is invalid")
+        raise SharedModules::AlertError.new("Token is invalid or expired")
       elsif @user.confirmed?
         raise SharedModules::AlertError.new("Invitation already accepted")
       else
@@ -410,6 +410,7 @@ module UserService
 
     def set_user_by_token
       @user = ::User.find_by(confirmation_token: params[:token])
+      @user = nil if @user.confirmation_sent_at < 2.weeks.ago
     end
 
     def user_params

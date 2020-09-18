@@ -66,7 +66,7 @@ module UserService
         exp: Time.now.to_i + 30,
         nonce: rand(1<<60),
         aud: URI.parse(loginURL).host,
-      }
+      }.select{|k,v|v}
       # TODO: Log this token, when tenders implemented the nonce invalidator
       encrypt_and_sign data
     end

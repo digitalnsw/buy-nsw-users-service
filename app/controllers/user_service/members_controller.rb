@@ -9,12 +9,59 @@ module UserService
     end
 
     def index
-      @members = ::User.where("? = any(seller_ids)", current_user.seller_id).where.not(seller_id: nil)
+      @members = ::User.where("? = any(seller_ids)", current_user.seller_id).
+        where.not(seller_id: nil, confirmed_at: nil)
       render json: serializer.index
+    end
+
+    def invite_existing_seller seller_id
+      if @user.seller_ids.include? seller_id
+        render json: { errors: [
+          { email: "This user is already member of your team" }
+        ] }, status: :unprocessable_entity
+      elsif !@user.is_seller?
+        render json: { errors: [
+          { email: "This user has already registered with non-supplier account." }
+        ] }, status: :unprocessable_entity
+      elsif !@user.confirmed?
+        render json: { errors: [
+          { email: "This address is not confirmed yet." }
+        ] }, status: :unprocessable_entity
+      else
+        SharedResources::RemoteNotification.create_notification(
+          recipients: [@user.id],
+          subject: "Your are invited by #{current_user.full_name || current_user.email} to join their supplier",
+          body: "By accepting this invitation you will be able to update this company profile. If you are already member of another team, you will have access to both teams.",
+          actions: [
+            {
+              key: 'accept',
+              caption: 'Accept',
+              resource: 'remote_user',
+              method: 'add_to_team',
+              params: [@user.id, seller_id],
+              success_message: 'invitation_accepted',
+            },
+            {
+              key: 'decline',
+              caption: 'Decline',
+              button_class: 'button-secondary',
+              success_message: 'invitation_declined',
+            },
+          ]
+        )
+        render json: serializer.show, status: :created
+      end
     end
 
     def create
       raise SharedModules::MethodNotAllowed unless current_user.is_seller? && current_user.seller_id
+
+      @user = ::User.find_by(email: member_params[:email])
+      if @user
+        invite_existing_seller current_user.seller_id
+        return
+      end
+
       @member = ::User.new(member_params)
       @member.seller_id = current_user.seller_id
       @member.seller_ids = [current_user.seller_id]
