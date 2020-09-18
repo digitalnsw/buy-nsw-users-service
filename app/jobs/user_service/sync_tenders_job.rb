@@ -4,7 +4,7 @@ module UserService
   class SyncTendersJob < SharedModules::ApplicationJob
     include SharedModules::Encrypt
 
-    def post_token host, hash
+    def post_token user, host, hash
       token = encrypt_and_sign(hash)
 
       uri = if user.uuid
@@ -94,7 +94,7 @@ module UserService
         hash['password'] = password
       end
 
-      result = post_token host, hash
+      result = post_token user, host, hash
       new_uuid = result['registeredUserUUID']
       user.update_attributes!(uuid: uuid) if new_uuid.present? && user.uuid != new_uuid
       raise result['errors'] if result['errors'].present?
