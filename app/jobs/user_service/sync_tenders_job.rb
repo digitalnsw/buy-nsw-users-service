@@ -96,7 +96,7 @@ module UserService
 
       result = post_token user, host, hash
       new_uuid = result['registeredUserUUID']
-      user.update_attributes!(uuid: uuid) if new_uuid.present? && user.uuid != new_uuid
+      user.update_attributes!(uuid: new_uuid) if new_uuid.present? && user.uuid != new_uuid
       raise result['errors'] if result['errors'].present?
     end
   end
