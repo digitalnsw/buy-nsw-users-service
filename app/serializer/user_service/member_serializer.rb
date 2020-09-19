@@ -6,6 +6,7 @@ module UserService
     end
 
     def attributes(member)
+      return unless member
       {
         id: member.id,
         full_name: member.full_name,

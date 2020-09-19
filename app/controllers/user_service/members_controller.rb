@@ -16,19 +16,14 @@ module UserService
 
     def invite_existing_seller seller_id
       if @user.seller_ids.include? seller_id
-        render json: { errors: [
-          { email: "This user is already member of your team" }
-        ] }, status: :unprocessable_entity
+        raise SharedModules::AlertError.new('This user is already member of your team')
       elsif !@user.is_seller?
-        render json: { errors: [
-          { email: "This user has already registered with non-supplier account." }
-        ] }, status: :unprocessable_entity
+        raise SharedModules::AlertError.new('This user has registered with a non-supplier account.')
       elsif !@user.confirmed?
-        render json: { errors: [
-          { email: "This address is not confirmed yet." }
-        ] }, status: :unprocessable_entity
+        raise SharedModules::AlertError.new('This address is not confirmed yet.')
       else
         SharedResources::RemoteNotification.create_notification(
+          unifier: 'invite_' + @user.id.to_s + '_to_' + seller_id.to_s,
           recipients: [@user.id],
           subject: "Your are invited by #{current_user.full_name || current_user.email} to join their supplier",
           body: "By accepting this invitation you will be able to update this company profile. If you are already member of another team, you will have access to both teams.",
@@ -49,6 +44,7 @@ module UserService
             },
           ]
         )
+        @member = @user
         render json: serializer.show, status: :created
       end
     end

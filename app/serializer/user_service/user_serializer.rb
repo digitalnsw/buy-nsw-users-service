@@ -6,7 +6,7 @@ module UserService
     end
 
     def attributes(user)
-      return nil unless user
+      return unless user
       {
         id: user.id,
         email: user.unconfirmed_email || user.email,

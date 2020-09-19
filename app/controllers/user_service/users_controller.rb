@@ -3,7 +3,7 @@ require_dependency "user_service/application_controller"
 module UserService
   class UsersController < UserService::ApplicationController
     skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :destroy, :remove_from_supplier]
-    before_action :authenticate_service, only: [:add_to_team, :seller_team, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    before_action :authenticate_service, only: [:add_to_team, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_email
@@ -104,6 +104,14 @@ module UserService
 
     def seller_team
       @users = ::User.where("? = any(seller_ids)", params[:seller_id].to_i).to_a
+      render json: serializer.index
+    end
+
+    def seller_owners
+      seller_id = params[:seller_id].to_i
+      @users = ::User.where("? = any(seller_ids)", seller_id).to_a.select do |u|
+        u.can? seller_id, :owner
+      end
       render json: serializer.index
     end
 

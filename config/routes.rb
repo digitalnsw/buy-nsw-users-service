@@ -31,6 +31,7 @@ UserService::Engine.routes.draw do
     post :remove_from_supplier, on: :member
 
     get :seller_team, on: :collection
+    get :seller_owners, on: :collection
     post :switch_supplier, on: :collection
 
     get :confirm_email, on: :collection
