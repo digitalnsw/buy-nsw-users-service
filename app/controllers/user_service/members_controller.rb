@@ -16,7 +16,8 @@ module UserService
 
     def invite_existing_seller seller_id
       if @user.seller_ids.include? seller_id
-        raise SharedModules::AlertError.new('This user is already member of your team')
+        raise SharedModules::AlertError.new(@user.confirmed? ?
+          'This user is already member of your team' : 'This user is already invited')
       elsif !@user.is_seller?
         raise SharedModules::AlertError.new('This user has registered with a non-supplier account.')
       elsif !@user.confirmed?
@@ -51,6 +52,7 @@ module UserService
 
     def create
       raise SharedModules::MethodNotAllowed unless current_user.is_seller? && current_user.seller_id
+      raise SharedModules::MethodNotAllowed unless current_user.can?(current_user.seller_id, :owner)
 
       @user = ::User.find_by(email: member_params[:email])
       if @user
