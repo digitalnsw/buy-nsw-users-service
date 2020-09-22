@@ -67,7 +67,7 @@ module UserService
         id: current_user&.id,
         email: current_user&.email,
         name: current_user&.full_name,
-        role: current_user&.is_seller ? 'seller' : 'buyer',
+        role: current_user&.is_seller? ? 'seller' : 'buyer',
         seller_ids: current_user&.seller_ids,
         sub: current_user&.uuid,
         iss: 'SUPPLIER_HUB',
