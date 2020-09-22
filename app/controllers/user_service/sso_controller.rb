@@ -12,6 +12,12 @@ module UserService
       params[:redirectString]
     end
 
+    def nonce
+      nonce = params[:nonce].to_s
+      raise_error if nonce.present? && !nonce.match?(/\A[a-zA-Z0-9]{10,}\Z/)
+      nonce
+    end
+
     def loginURL
       params[:loginURL]
     end
@@ -60,11 +66,14 @@ module UserService
       data = {
         id: current_user&.id,
         email: current_user&.email,
+        name: current_user&.full_name,
+        role: current_user&.is_seller ? 'seller' : 'buyer',
+        seller_ids: current_user&.seller_ids,
         sub: current_user&.uuid,
         iss: 'SUPPLIER_HUB',
         iat: Time.now.to_i,
         exp: Time.now.to_i + 30,
-        nonce: rand(1<<60),
+        nonce: (nonce.present? ? nonce : SecureRandom.base58(10)),
         aud: URI.parse(loginURL).host,
       }.select{|k,v|v}
       # TODO: Log this token, when tenders implemented the nonce invalidator
@@ -87,7 +96,8 @@ module UserService
       if current_user
         sync
       else 
-        redirect_to '/ict/login?redirectString=' +
+        redirect_to '/ict/login?nonce=' +
+          nonce + '&redirectString=' +
           CGI.escape(redirectString) + '&loginURL=' +
           CGI.escape(loginURL)
       end
