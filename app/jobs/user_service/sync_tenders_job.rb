@@ -52,7 +52,13 @@ module UserService
       }
       state = state_hash[version&.addresses&.first&.state] || "NSW"
       country = ISO3166::Country.new(version&.addresses&.first&.country)&.name&.upcase || 'AUSTRALIA'
-      abn = ABN.valid?(version&.abn) ? version&.abn.gsub(' ', '') : ''
+
+      abr = SharedModules::Abr.lookup(version&.abn)
+      abn = if abr && abr[:status] == 'Active'
+              version&.abn.gsub(' ', '')
+            else
+              ''
+            end
 
       sme_hash = {
         'sole' => '0-19',
