@@ -62,7 +62,7 @@ module UserService
       raise SharedModules::MethodNotAllowed.new('SSO does not work in impersonating mode') if current_user != true_user
     end
 
-    def generate_token
+    def create_token
       data = {
         id: current_user&.id,
         email: current_user&.email,
@@ -110,7 +110,7 @@ module UserService
     def sync
       if current_user.present?
         raise_error unless loginURL.present?
-        soft_redirect loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
+        soft_redirect loginURL + create_token + '&redirectString=' + CGI.escape(redirectString)
       else
         raise_error unless redirectString.present?
         redirect_to redirectString
