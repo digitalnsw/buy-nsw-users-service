@@ -31,6 +31,7 @@ module UserService
     end
 
     def perform user_id
+      return unless ENV['ETENDERING_URL'].present?
       user = ::User.find user_id.to_i
       name = user.full_name || ''
       firstname = present_or(name.partition(' ').first, 'Firstname')
