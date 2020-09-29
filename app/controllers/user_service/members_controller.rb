@@ -5,7 +5,9 @@ module UserService
     before_action :authenticate_user
 
     def serializer
-      UserService::MemberSerializer.new(member: @member, members: @members)
+      UserService::MemberSerializer.new(member: @member,
+                                        members: @members,
+                                        seller_id: current_user.seller_id)
     end
 
     def index
