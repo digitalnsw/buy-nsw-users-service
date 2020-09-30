@@ -362,6 +362,9 @@ module UserService
 
       logout_user current_user
       login_user @user      
+      SharedResources::RemoteBuyer.auto_register(email: @user.email,
+                                                 name: @user.full_name.to_s,
+                                                 user_id: @user.id) if @user.is_buyer?
       UserService::SyncTendersJob.perform_later @user.id
       log_user_event!("User confirmed email")
       redirect_to "/ict/success/email_confirmation"
