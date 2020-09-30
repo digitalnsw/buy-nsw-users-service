@@ -159,6 +159,12 @@ module UserService
 
         if @user.email != params[:email]
           @user.email = params[:email]
+          if @user.is_buyer? && !SharedResources::RemoteBuyer.check_email(params[:email])
+            render json: { errors: [ {
+              email: 'Please use a recognised Australian Government email address'
+            } ] }, status: :unprocessable_entity
+            return
+          end
           unless @user.save
             render json: { errors: [{ email: 'This email address is currently in use or invalid' }] }, status: :unprocessable_entity
             return
@@ -189,6 +195,12 @@ module UserService
         if ['seller', 'buyer'].exclude? params[:type]
           raise SharedModules::AlertError.new("Invalid user type")
         else
+          if params[:type] == 'buyer' && !SharedResources::RemoteBuyer.check_email(params[:email])
+            render json: { errors: [ {
+              email: 'Please use a recognised Australian Government email address'
+            } ] }, status: :unprocessable_entity
+            return
+          end
           user = ::User.new(
             email: params[:email],
             has_password: true,
