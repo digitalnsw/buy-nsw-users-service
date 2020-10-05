@@ -43,8 +43,6 @@ module UserService
     end
 
     def remove_from_supplier
-      raise "Only superadmin may remove users" unless service_user.is_superadmin?
-
       user = ::User.find_by(id: params[:id])
       raise "User has multiple companies" if (user.seller_ids || []).size > 1
 
@@ -55,7 +53,6 @@ module UserService
     end
 
     def destroy
-      raise "Only superadmin may destroy users" unless service_user.is_superadmin?
       user = ::User.find_by(id: params[:id])
       if user.present?
         ::User.transaction do
