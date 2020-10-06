@@ -28,7 +28,7 @@ module UserService
         sent_at: Time.now.utc,
         user_id: user&.id,
         action: 'user_sync',
-        status: response.status,
+        status: response.code,
         response: response.body,
       )
       log.save
