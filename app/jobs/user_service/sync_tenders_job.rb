@@ -23,6 +23,16 @@ module UserService
       request['Authorization'] = 'Basic ' + ENV['ETENDERING_WAF_SECRET']
       response = https.request request
 
+      log = AnalyticsService::UserSync.create(
+        date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
+        sent_at: Time.now.utc,
+        user_id: user&.id,
+        action: 'user_sync',
+        status: response.status,
+        response: response.body,
+      )
+      log.save
+
       JSON.parse(response.body)
     end
 

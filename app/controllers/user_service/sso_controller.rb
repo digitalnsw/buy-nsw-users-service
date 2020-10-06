@@ -63,6 +63,17 @@ module UserService
     end
 
     def create_token
+      log = AnalyticsService::SsoLog.create(
+        date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
+        sent_at: Time.now.utc,
+        user_id: current_user&.id,
+        action: 'create_token',
+        host: URI.parse(loginURL).host,
+        redirect_string: redirectString,
+        login_url: loginURL,
+      )
+      log.save
+
       data = {
         id: current_user&.id,
         email: current_user&.email,
