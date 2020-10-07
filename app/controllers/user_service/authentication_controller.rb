@@ -71,6 +71,7 @@ module UserService
         result.merge!({
           user: {
             id: me.id,
+            uuid: me.uuid,
             email: me.email,
             full_name: me.full_name,
             roles: me.roles.map(&:to_s),
