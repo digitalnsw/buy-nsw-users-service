@@ -342,18 +342,18 @@ module UserService
 
     def confirm_email
       if @user.nil?
-        redirect_to "/ict/failure/confirmation_token_not_found"
+        redirect_to "/failure/confirmation_token_not_found"
         return
       end
 
       #FIXME: This case may never happen as user's token is removed during confirmation
       if @user && @user.confirmed? && !@user.unconfirmed_email?
-        redirect_to "/ict/failure/email_already_confirmed"
+        redirect_to "/failure/email_already_confirmed"
         return
       end
 
       unless @user.confirm
-        redirect_to "/ict/failure/email_confirmation_failed"
+        redirect_to "/failure/email_confirmation_failed"
         return
       end
 
@@ -364,23 +364,23 @@ module UserService
                                                  user_id: @user.id) if @user.is_buyer?
       UserService::SyncTendersJob.perform_later @user.id
       log_user_event!("User confirmed email")
-      redirect_to "/ict/success/email_confirmation"
+      redirect_to "/success/email_confirmation"
     end
 
     def unlock_account
       # params: unlock_token
-      # success: redirect /ict/success/account_unlocked
+      # success: redirect /success/account_unlocked
     end
 
     def approve_buyer
       begin
         SharedResources::RemoteBuyer.manager_approval(params[:manager_approval_token])
-        redirect_to "/ict/success/manager_approved"
+        redirect_to "/success/manager_approved"
       rescue ActiveResource::ResourceNotFound => e
-        redirect_to "/ict/failure/manager_approved"
+        redirect_to "/failure/manager_approved"
       rescue => exception
         Airbrake.notify_sync exception
-        redirect_to "/ict/failure/manager_approved"
+        redirect_to "/failure/manager_approved"
       end
     end
 
@@ -389,9 +389,9 @@ module UserService
       if @user && Digest::SHA2.hexdigest(@user.email + ENV['OPTOUT_SECRET']) == params[:token]
         log_user_event! "Unsubscribed"
         @user.update_attributes!(opted_out: true)
-        redirect_to "/ict/success/unsubscribe"
+        redirect_to "/success/unsubscribe"
       else
-        redirect_to "/ict/failure/unsubscribe"
+        redirect_to "/failure/unsubscribe"
       end
     end
 

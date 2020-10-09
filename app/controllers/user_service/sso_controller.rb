@@ -107,7 +107,7 @@ module UserService
       if current_user
         sync
       else 
-        redirect_to '/ict/login?nonce=' +
+        redirect_to '/login?nonce=' +
           nonce + '&redirectString=' +
           CGI.escape(redirectString) + '&loginURL=' +
           CGI.escape(loginURL)
@@ -133,16 +133,16 @@ module UserService
       if current_user
         sync
       else
-        redirect_to '/ict/signup/supplier'
+        redirect_to '/signup/supplier'
       end
     end
 
     def profile
-      redirect_to '/ict/account/settings'
+      redirect_to '/account/settings'
     end
 
     def forgot_password
-      redirect_to '/ict/forgot-password'
+      redirect_to '/forgot-password'
     end
   end
 end
