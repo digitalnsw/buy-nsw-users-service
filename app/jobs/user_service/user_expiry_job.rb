@@ -7,26 +7,26 @@ module UserService
 
       User.where(uuid: nil, seller_id: nil, confirmed_at: nil).each do |user|
 
-        next if user.confirmed? || user.opted_out? || user.suspended?
+        next if user.confirmed? || user.suspended?
 
         d = (Date.today - user.confirmation_sent_at.to_date).to_i
 
         mailer = UserExpiryMailer.with(email: user.email, user: user)
 
         if d == 7
-          mailer.user_confirmation_reminder_email.deliver_later
+          mailer.user_confirmation_reminder_email.deliver_later unless user.opted_out?
 
           reminded += 1
         end
 
         if d == 12
-          mailer.user_about_deletion_email.deliver_later
+          mailer.user_about_deletion_email.deliver_later unless user.opted_out?
 
           about_to_expire += 1
         end
 
         if d >= 14
-          mailer.user_expired_email.deliver_later
+          mailer.user_expired_email.deliver_later unless user.opted_out?
           user.update_column(:email, user.email + '_' + Time.now.to_i.to_s)
           user.destroy
 
