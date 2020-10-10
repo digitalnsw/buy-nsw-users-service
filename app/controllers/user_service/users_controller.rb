@@ -36,10 +36,14 @@ module UserService
     def add_to_team
       u = ::User.find(params[:id])
       s_id = params[:seller_id].to_i
+      privileges = params[:privileges]&.to_a&.map(&:to_sym) || []
       has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
       UserService::SyncTendersJob.perform_later u.id
       u.grant! s_id, :owner unless has_owners
+      privileges.each do |p|
+        u.grant! s_id, p
+      end
     end
 
     def remove_from_supplier
