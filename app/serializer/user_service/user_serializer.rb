@@ -6,6 +6,7 @@ module UserService
     end
 
     def attributes(user)
+      return unless user
       {
         id: user.id,
         email: user.unconfirmed_email || user.email,
@@ -16,7 +17,8 @@ module UserService
         roles: user.roles.to_a,
         seller_id: user.seller_id,
         confirmed: user.unconfirmed_email.nil? || user.email == user.unconfirmed_email,
-        opted_out: user.opted_out
+        opted_out: user.opted_out,
+        active: user.confirmed? && !user.suspended,
       }
     end
 

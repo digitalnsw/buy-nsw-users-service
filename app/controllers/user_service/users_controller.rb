@@ -2,8 +2,8 @@ require_dependency "user_service/application_controller"
 
 module UserService
   class UsersController < UserService::ApplicationController
-    skip_before_action :verify_authenticity_token, raise: false, only: [:update_seller, :seller_owners, :destroy, :remove_from_supplier] 
-    before_action :authenticate_service, only: [:update_seller, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :destroy, :remove_from_supplier]
+    before_action :authenticate_service, only: [:add_to_team, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_email
@@ -33,18 +33,20 @@ module UserService
     end
 
     # This method is called when admin assignes a user or when they iniate a supplier
-    def update_seller
+    def add_to_team
       u = ::User.find(params[:id])
       s_id = params[:seller_id].to_i
+      privileges = params[:privileges]&.to_a&.map(&:to_sym) || []
       has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
       UserService::SyncTendersJob.perform_later u.id
       u.grant! s_id, :owner unless has_owners
+      privileges.each do |p|
+        u.grant! s_id, p
+      end
     end
 
     def remove_from_supplier
-      raise "Only superadmin may remove users" unless service_user.is_superadmin?
-
       user = ::User.find_by(id: params[:id])
       raise "User has multiple companies" if (user.seller_ids || []).size > 1
 
@@ -55,7 +57,6 @@ module UserService
     end
 
     def destroy
-      raise "Only superadmin may destroy users" unless service_user.is_superadmin?
       user = ::User.find_by(id: params[:id])
       if user.present?
         ::User.transaction do
@@ -76,13 +77,13 @@ module UserService
     end
 
     def get_by_id
-      @users = ::User.where(id: params[:id])
-      render json: serializer.index
+      @user = ::User.where(id: params[:id]).first
+      render json: serializer.show
     end
 
     def get_by_email
-      @users = ::User.where(email: params[:email])
-      render json: serializer.index
+      @user = ::User.where(email: params[:email]).first
+      render json: serializer.show
     end
 
     def create
@@ -102,8 +103,16 @@ module UserService
       SharedResources::RemoteEvent.create_event(@user.id, 'User', current_user&.id || @user.id, 'Event::User', note)
     end
 
-    def seller_owners
+    def seller_team
       @users = ::User.where("? = any(seller_ids)", params[:seller_id].to_i).to_a
+      render json: serializer.index
+    end
+
+    def seller_owners
+      seller_id = params[:seller_id].to_i
+      @users = ::User.where("? = any(seller_ids)", seller_id).to_a.select do |u|
+        u.can? seller_id, :owner
+      end
       render json: serializer.index
     end
 
@@ -151,6 +160,12 @@ module UserService
 
         if @user.email != params[:email]
           @user.email = params[:email]
+          if @user.is_buyer? && !SharedResources::RemoteBuyer.check_email(params[:email])
+            render json: { errors: [ {
+              email: 'Please use a recognised Australian Government email address'
+            } ] }, status: :unprocessable_entity
+            return
+          end
           unless @user.save
             render json: { errors: [{ email: 'This email address is currently in use or invalid' }] }, status: :unprocessable_entity
             return
@@ -181,6 +196,12 @@ module UserService
         if ['seller', 'buyer'].exclude? params[:type]
           raise SharedModules::AlertError.new("Invalid user type")
         else
+          if params[:type] == 'buyer' && !SharedResources::RemoteBuyer.check_email(params[:email])
+            render json: { errors: [ {
+              email: 'Please use a recognised Australian Government email address'
+            } ] }, status: :unprocessable_entity
+            return
+          end
           user = ::User.new(
             email: params[:email],
             has_password: true,
@@ -295,18 +316,18 @@ module UserService
           login_user @user
           render json: { message: 'Application started' }, status: :accepted
         else
-           render json: { errors: [
-             @user.errors&.messages&.map{|k,v|
-               [k, k.to_s + ' ' + v.first.to_s]
-             }.to_h
-           ] }, status: :unprocessable_entity
+          render json: { errors: [
+            @user.errors&.messages&.map{|k,v|
+              [k, k.to_s + ' ' + v.first.to_s]
+            }.to_h
+          ] }, status: :unprocessable_entity
         end
       end
     end
 
     def accept_invitation
       if @user.nil?
-        raise SharedModules::AlertError.new("Token is invalid")
+        raise SharedModules::AlertError.new("Token is invalid or expired")
       elsif @user.confirmed?
         raise SharedModules::AlertError.new("Invitation already accepted")
       else
@@ -325,42 +346,45 @@ module UserService
 
     def confirm_email
       if @user.nil?
-        redirect_to "/ict/failure/confirmation_token_not_found"
+        redirect_to "/failure/confirmation_token_not_found"
         return
       end
 
       #FIXME: This case may never happen as user's token is removed during confirmation
       if @user && @user.confirmed? && !@user.unconfirmed_email?
-        redirect_to "/ict/failure/email_already_confirmed"
+        redirect_to "/failure/email_already_confirmed"
         return
       end
 
       unless @user.confirm
-        redirect_to "/ict/failure/email_confirmation_failed"
+        redirect_to "/failure/email_confirmation_failed"
         return
       end
 
       logout_user current_user
       login_user @user      
+      SharedResources::RemoteBuyer.auto_register(email: @user.email,
+                                                 name: @user.full_name.to_s,
+                                                 user_id: @user.id) if @user.is_buyer?
       UserService::SyncTendersJob.perform_later @user.id
       log_user_event!("User confirmed email")
-      redirect_to "/ict/success/email_confirmation"
+      redirect_to "/success/email_confirmation"
     end
 
     def unlock_account
       # params: unlock_token
-      # success: redirect /ict/success/account_unlocked
+      # success: redirect /success/account_unlocked
     end
 
     def approve_buyer
       begin
         SharedResources::RemoteBuyer.manager_approval(params[:manager_approval_token])
-        redirect_to "/ict/success/manager_approved"
+        redirect_to "/success/manager_approved"
       rescue ActiveResource::ResourceNotFound => e
-        redirect_to "/ict/failure/manager_approved"
+        redirect_to "/failure/manager_approved"
       rescue => exception
         Airbrake.notify_sync exception
-        redirect_to "/ict/failure/manager_approved"
+        redirect_to "/failure/manager_approved"
       end
     end
 
@@ -369,9 +393,9 @@ module UserService
       if @user && Digest::SHA2.hexdigest(@user.email + ENV['OPTOUT_SECRET']) == params[:token]
         log_user_event! "Unsubscribed"
         @user.update_attributes!(opted_out: true)
-        redirect_to "/ict/success/unsubscribe"
+        redirect_to "/success/unsubscribe"
       else
-        redirect_to "/ict/failure/unsubscribe"
+        redirect_to "/failure/unsubscribe"
       end
     end
 
@@ -410,6 +434,7 @@ module UserService
 
     def set_user_by_token
       @user = ::User.find_by(confirmation_token: params[:token])
+      @user = nil if @user.confirmation_sent_at < 2.weeks.ago
     end
 
     def user_params

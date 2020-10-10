@@ -62,8 +62,6 @@ module UserService
           else
             Rails.env
           end,
-          build_version: defined?(APP_VERSION) && APP_VERSION,
-          build_time: defined?(APP_VERSION_TIME) && APP_VERSION_TIME,
           etendering_url: ENV['ETENDERING_URL']
         },
         csrf_token: session[:_csrf_token] || form_authenticity_token,
@@ -73,11 +71,13 @@ module UserService
         result.merge!({
           user: {
             id: me.id,
+            uuid: me.uuid,
             email: me.email,
             full_name: me.full_name,
             roles: me.roles.map(&:to_s),
             seller_id: me.seller_id,
             seller_ids: me.seller_ids,
+            ownes_seller: me.seller_id.present? && me.can?(me.seller_id, :owner),
             privileges: me.privileges(me.seller_id) || [],
             seller_live: me.seller_is_live?,
             buyer_id: me.buyer_id,

@@ -12,6 +12,12 @@ module UserService
       params[:redirectString]
     end
 
+    def nonce
+      nonce = params[:nonce].to_s
+      raise_error if nonce.present? && !nonce.match?(/\A[a-zA-Z0-9]{10,}\Z/)
+      nonce
+    end
+
     def loginURL
       params[:loginURL]
     end
@@ -56,17 +62,31 @@ module UserService
       raise SharedModules::MethodNotAllowed.new('SSO does not work in impersonating mode') if current_user != true_user
     end
 
-    def generate_token
+    def create_token
+      log = AnalyticsService::SsoLog.create(
+        date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
+        sent_at: Time.now.utc,
+        user_id: current_user&.id,
+        action: 'create_token',
+        host: URI.parse(loginURL).host,
+        redirect_string: redirectString,
+        login_url: loginURL,
+      )
+      log.save
+
       data = {
         id: current_user&.id,
         email: current_user&.email,
+        name: current_user&.full_name,
+        role: current_user&.is_seller? ? 'seller' : 'buyer',
+        seller_ids: current_user&.seller_ids,
         sub: current_user&.uuid,
         iss: 'SUPPLIER_HUB',
         iat: Time.now.to_i,
         exp: Time.now.to_i + 30,
-        nonce: rand(1<<60),
+        nonce: (nonce.present? ? nonce : SecureRandom.base58(10)),
         aud: URI.parse(loginURL).host,
-      }
+      }.select{|k,v|v}
       # TODO: Log this token, when tenders implemented the nonce invalidator
       encrypt_and_sign data
     end
@@ -87,7 +107,8 @@ module UserService
       if current_user
         sync
       else 
-        redirect_to '/ict/login?redirectString=' +
+        redirect_to '/login?nonce=' +
+          nonce + '&redirectString=' +
           CGI.escape(redirectString) + '&loginURL=' +
           CGI.escape(loginURL)
       end
@@ -100,7 +121,7 @@ module UserService
     def sync
       if current_user.present?
         raise_error unless loginURL.present?
-        soft_redirect loginURL + generate_token + '&redirectString=' + CGI.escape(redirectString)
+        soft_redirect loginURL + create_token + '&redirectString=' + CGI.escape(redirectString)
       else
         raise_error unless redirectString.present?
         redirect_to redirectString
@@ -112,16 +133,16 @@ module UserService
       if current_user
         sync
       else
-        redirect_to '/ict/signup/supplier'
+        redirect_to '/signup/supplier'
       end
     end
 
     def profile
-      redirect_to '/ict/account/settings'
+      redirect_to '/account/settings'
     end
 
     def forgot_password
-      redirect_to '/ict/forgot-password'
+      redirect_to '/forgot-password'
     end
   end
 end
