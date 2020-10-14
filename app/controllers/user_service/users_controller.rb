@@ -246,7 +246,7 @@ module UserService
       else
         logout_user current_user
 
-        if @user.confirmation_sent_at < 2.weeks.ago
+        if @user.confirmation_sent_at < 4.weeks.ago
           @user.update_columns(confirmation_token: SecureRandom.base58(20))
         end
         @user.update_columns(confirmation_sent_at: Time.now)
@@ -434,7 +434,7 @@ module UserService
 
     def set_user_by_token
       @user = ::User.find_by(confirmation_token: params[:token])
-      @user = nil if @user.confirmation_sent_at < 2.weeks.ago
+      @user = nil if @user.confirmation_sent_at < 4.weeks.ago
     end
 
     def user_params
