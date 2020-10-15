@@ -27,8 +27,8 @@ module UserService
           u = ::User.find_or_initialize_by(email: row['Email'].downcase)
 
           u.uuid = ru.uuid
-          u.full_name ||= (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
-            gsub(/[()]/, '').gsub(/ +/, ' ').strip
+          u.full_name = (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
+            gsub(/[()]/, '').gsub(/ +/, ' ').strip if u.full_name.blank?
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
           u.password = u.password_confirmation = SecureRandom.hex(32) unless u.persisted?
 
