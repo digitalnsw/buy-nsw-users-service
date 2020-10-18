@@ -122,7 +122,12 @@ module UserService
       else
         @user.opted_out = params[:user][:opted_out].to_s == 'true'
         @user.full_name = params[:user][:full_name]
-        @user.save! if @user.has_changes_to_save?
+        if @user.has_changes_to_save?
+          unless @user.save
+            render json: { errors: [{ full_name: 'Name is invalid' }] }, status: :unprocessable_entity
+            return
+          end
+        end
 
         UserService::SyncTendersJob.perform_later @user.id
 
