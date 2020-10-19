@@ -16,6 +16,11 @@ module UserService
       render json: serializer.index
     end
 
+    def log_user_event!(user, note)
+      SharedResources::RemoteEvent.generate_token current_user
+      SharedResources::RemoteEvent.create_event(user.id, 'User', current_user&.id, 'Event::User', note)
+    end
+
     def invite_existing_seller seller_id
       if @user.seller_ids.include? seller_id
         raise SharedModules::AlertError.new(@user.confirmed? ?
@@ -49,6 +54,7 @@ module UserService
           ]
         )
         @member = @user
+        log_user_event!(@member, "User invited to join supplier: " + seller_id.to_s)
         render json: serializer.show, status: :created
       end
     end
@@ -75,6 +81,7 @@ module UserService
         UserService::SyncTendersJob.perform_later @member.id
         mailer = SellerInvitationMailer.with(user: @member)
         mailer.seller_invitation_email.deliver_later
+        log_user_event!(@member, "User created by invite to join supplier: " + @member.seller_id.to_s)
         render json: serializer.show, status: :created
       else
         render json: { errors: [
