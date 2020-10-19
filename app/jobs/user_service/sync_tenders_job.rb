@@ -2,6 +2,7 @@ require 'net/http'
 
 module UserService
   class SyncTendersJob < SharedModules::ApplicationJob
+    include SharedModules::Serializer
     include SharedModules::Encrypt
 
     def post_token user, host, hash
@@ -23,15 +24,22 @@ module UserService
       request['Authorization'] = 'Basic ' + ENV['ETENDERING_WAF_SECRET']
       response = https.request request
 
-      log = AnalyticsService::UserSync.create(
-        date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
-        sent_at: Time.now.utc,
-        user_id: user&.id,
-        action: 'user_sync',
-        status: response.code,
-        response: response.body,
-      )
-      log.save
+      begin
+        log = AnalyticsService::UserSync.create(
+          date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
+          sent_at: Time.now.utc,
+          user_id: user&.id,
+          action: 'user_sync',
+          status: response.code,
+          response: sanitize(response.body),
+        )
+        log.save
+      rescue => e
+        Airbrake.notify_sync(e.message, {
+          user_id: user&.id,
+          trace: e.backtrace.select{|l|l.match?(/buy-nsw/)},
+        })
+      end
 
       JSON.parse(response.body)
     end
