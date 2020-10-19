@@ -159,7 +159,13 @@ module UserService
       unless @user&.valid_password?(params[:currentPassword])
         render json: { errors: [{ password: 'Invalid Password' }] }, status: :unprocessable_entity
       else
-        @user.update_attributes!(full_name: params[:full_name]) if @user.full_name != params[:full_name]
+        @user.full_name = params[:user][:full_name]
+        if @user.has_changes_to_save?
+          unless @user.save
+            render json: { errors: [{ full_name: 'Name is invalid' }] }, status: :unprocessable_entity
+            return
+          end
+        end
 
         UserService::SyncTendersJob.perform_later @user.id
 
