@@ -2,7 +2,30 @@ module UserService
   class RegisteredUser < ApplicationRecord
     self.table_name = 'registered_users'
 
+    def self.convert_state fields
+      if fields['Country'].present? && fields['Country'].upcase != 'AUSTRALIA'
+        'outside_au'
+      elsif fields['State']&.downcase&.in? ["nsw", "act", "nt", "qld", "sa", "tas", "vic", "wa"]
+        fields['State'].downcase
+      else
+        ''
+      end
+    end
+
     def self.import xml_doc
+      abn_ex_h = {
+        "NE" => "non-exempt",
+        "EN" => "non-australian",
+        "EI" => "insufficient-turnover",
+        "EO" => "other",
+      }
+      num_emp_h = {
+        "0-19" => '5to19',
+        "20-100" => '50to99',
+        "101-200" => '100to199',
+        "200+" => '200plus',
+      }
+
       rows = xml_doc.css('row').to_a.map do |row|
         fields = row.css("field").map do |field|
           [field['name'], field.inner_text]
@@ -32,7 +55,7 @@ module UserService
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
           u.password = u.password_confirmation = SecureRandom.hex(32) unless u.persisted?
 
-          abn = row['ABN'].gsub('-', '')
+          abn = row['ABN']&.gsub('-', '')
           if abn.present? && ABN.valid?(abn)
             abn = ABN.new(abn).to_s
             seller_id = ::SellerVersion.where(abn: abn, state: ['approved','pending']).first&.seller_id
@@ -41,6 +64,45 @@ module UserService
             if seller_id.present? && u.seller_id != seller_id
               u.seller_id ||= seller_id
               u.seller_ids |= [seller_id]
+            end
+
+            if u.seller_id.nil?
+              seller = SellerService::Seller.create!(state: :draft, ru_uuid: ru.uuid)
+              sv = SellerService::SellerVersion.create!({
+                seller_id: seller.id,
+                state: :draft,
+                started_at: Time.now,
+                schemes_and_panels: [],
+                name: row['CompanyName'] || '',
+                abn: abn,
+                abn_exempt: abn_ex_h[row['ABNExempt']],
+                abn_exempt_reason: row['ABNExemptReason'] || '',
+                indigenous: row['IsATSIOwned'].to_i == 1,
+                addresses: [
+                  {
+                    address: row["Address1"] || '',
+                    address_2: row["Address2"] || '',
+                    address_3: row["OfficeName"] || '',
+                    suburb: row["City"] || '',
+                    postcode: row["Postcode"] || '',
+                    state: convert_state(row),
+                    country: ISO3166::Country.find_country_by_name(
+                             row["Country"])&.un_locode || '',
+                  }
+                ],
+
+                contact_first_name: row["GivenName"] || '',
+                contact_last_name: row["Surname"] || '',
+                contact_phone: row["CompanyPhone"] || '',
+                contact_email: row["Email"].downcase || '',
+                contact_position: '',
+
+                number_of_employees: num_emp_h[row["SMEStatus"]] || '',
+                australia_employees: num_emp_h[row["SMEStatus"]] || '',
+                nsw_employees: num_emp_h[row["SMEStatus"]] || '',
+              })
+              u.seller_id ||= seller.id
+              u.seller_ids |= [seller.id]
             end
           end
 
