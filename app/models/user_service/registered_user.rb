@@ -45,15 +45,13 @@ module UserService
 
           u = ::User.find_by(uuid: row['RegisteredUserUUID'])
 
-          next if u.present?
-
-          u = ::User.find_or_initialize_by(email: row['Email'].downcase)
+          u ||= ::User.find_or_initialize_by(email: row['Email'].downcase)
 
           u.uuid = ru.uuid
           u.full_name = (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
             gsub(/[()]/, '').gsub(/ +/, ' ').strip if u.full_name.blank?
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
-          u.password = u.password_confirmation = SecureRandom.hex(32) unless u.persisted?
+          u.password = u.password_confirmation = SecureRandom.hex(32) unless u.has_password?
 
           abn = row['ABN']&.gsub('-', '')
           if abn.present? && ABN.valid?(abn)
