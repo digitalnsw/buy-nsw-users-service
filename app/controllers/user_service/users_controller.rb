@@ -447,7 +447,7 @@ module UserService
 
     def set_user_by_token
       @user = ::User.find_by(confirmation_token: params[:token])
-      @user = nil if @user.confirmation_sent_at < 4.weeks.ago
+      @user = nil if @user && @user.confirmation_sent_at < 4.weeks.ago
     end
 
     def user_params
