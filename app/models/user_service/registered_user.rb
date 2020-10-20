@@ -103,6 +103,7 @@ module UserService
               })
               u.seller_id ||= seller.id
               u.seller_ids |= [seller.id]
+              u.grant seller.id, :owner
             end
           end
 
