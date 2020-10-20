@@ -111,6 +111,7 @@ module UserService
         "state": country == 'AUSTRALIA' ? state : 'Outside Australia',
         "country": country,
         "companyPhone": present_or(version&.contact_phone, "000"),
+        "ATSI": (version&.indigenous ? '1' : '0'),
       }
 
       if user.uuid
