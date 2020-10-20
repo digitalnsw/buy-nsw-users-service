@@ -63,46 +63,47 @@ module UserService
               u.seller_id ||= seller_id
               u.seller_ids |= [seller_id]
             end
+          end
 
-            if u.seller_id.nil?
-              seller = SellerService::Seller.create!(state: :draft, ru_uuid: ru.uuid)
-              sv = SellerService::SellerVersion.create!({
-                seller_id: seller.id,
-                state: :draft,
-                started_at: Time.now,
-                schemes_and_panels: [],
-                name: row['CompanyName'] || '',
-                abn: abn,
-                abn_exempt: abn_ex_h[row['ABNExempt']],
-                abn_exempt_reason: row['ABNExemptReason'] || '',
-                indigenous: row['IsATSIOwned'].to_i == 1,
-                addresses: [
-                  {
-                    address: row["Address1"] || '',
-                    address_2: row["Address2"] || '',
-                    address_3: row["OfficeName"] || '',
-                    suburb: row["City"] || '',
-                    postcode: row["Postcode"] || '',
-                    state: convert_state(row),
-                    country: ISO3166::Country.find_country_by_name(
-                             row["Country"])&.un_locode || '',
-                  }
-                ],
+          if u.seller_id.nil?
+            abn = ABN.new(abn).to_s
+            seller = SellerService::Seller.create!(state: :draft, ru_uuid: ru.uuid)
+            sv = SellerService::SellerVersion.create!({
+              seller_id: seller.id,
+              state: :draft,
+              started_at: Time.now,
+              schemes_and_panels: [],
+              name: row['CompanyName'] || '',
+              abn: abn,
+              abn_exempt: abn_ex_h[row['ABNExempt']],
+              abn_exempt_reason: row['ABNExemptReason'] || '',
+              indigenous: row['IsATSIOwned'].to_i == 1,
+              addresses: [
+                {
+                  address: row["Address1"] || '',
+                  address_2: row["Address2"] || '',
+                  address_3: row["OfficeName"] || '',
+                  suburb: row["City"] || '',
+                  postcode: row["Postcode"] || '',
+                  state: convert_state(row),
+                  country: ISO3166::Country.find_country_by_name(
+                           row["Country"])&.un_locode || '',
+                }
+              ],
 
-                contact_first_name: row["GivenName"] || '',
-                contact_last_name: row["Surname"] || '',
-                contact_phone: row["CompanyPhone"] || '',
-                contact_email: row["Email"].downcase || '',
-                contact_position: '',
+              contact_first_name: row["GivenName"] || '',
+              contact_last_name: row["Surname"] || '',
+              contact_phone: row["CompanyPhone"] || '',
+              contact_email: row["Email"].downcase || '',
+              contact_position: '',
 
-                number_of_employees: num_emp_h[row["SMEStatus"]] || '',
-                australia_employees: num_emp_h[row["SMEStatus"]] || '',
-                nsw_employees: num_emp_h[row["SMEStatus"]] || '',
-              })
-              u.seller_id ||= seller.id
-              u.seller_ids |= [seller.id]
-              u.grant seller.id, :owner
-            end
+              number_of_employees: num_emp_h[row["SMEStatus"]] || '',
+              australia_employees: num_emp_h[row["SMEStatus"]] || '',
+              nsw_employees: num_emp_h[row["SMEStatus"]] || '',
+            })
+            u.seller_id ||= seller.id
+            u.seller_ids |= [seller.id]
+            u.grant seller.id, :owner
           end
 
           u.skip_confirmation_notification!
