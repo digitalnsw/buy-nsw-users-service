@@ -8,11 +8,13 @@ module UserService
     def post_token user, host, hash
       token = encrypt_and_sign(hash)
 
-      uri = if user.uuid
-        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.update')
+      url = if user.uuid
+        ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.update'
       else
-        URI(ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.create')
+        ENV['ETENDERING_URL'] + '?event=public.supplierhubuser.create'
       end
+
+      uri = URI(url)
 
       https = Net::HTTP.new(uri.host, uri.port)
       https.use_ssl = true
@@ -26,6 +28,8 @@ module UserService
 
       begin
         log = AnalyticsService::UserSync.create(
+          token: token,
+          url: url,
           date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
           sent_at: Time.now.utc,
           user_id: user&.id,
