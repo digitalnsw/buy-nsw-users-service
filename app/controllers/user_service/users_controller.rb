@@ -340,7 +340,7 @@ module UserService
 
     def accept_invitation
       if @user.nil?
-        raise SharedModules::AlertError.new("Token is invalid or expired")
+        raise SharedModules::AlertError.new("This link is invalid or has expired. Please use the link in the most recent email you received.")
       elsif @user.confirmed?
         raise SharedModules::AlertError.new("Invitation already accepted")
       else
