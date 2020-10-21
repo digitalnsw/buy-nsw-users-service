@@ -48,11 +48,16 @@ module UserService
 
     def remove_from_supplier
       user = ::User.find_by(id: params[:id])
-      raise "User has multiple companies" if (user.seller_ids || []).size > 1
+      s_id = params[:seller_id].to_i
 
       if user.present?
-        user.update_attributes!(seller_id: nil, seller_ids: [], permissions: {})
+        user.seller_ids.delete s_id
+        user.seller_id = user.seller_ids.first unless user.seller_id.in? user.seller_ids
+        user.revoke s_id
+        user.save
       end
+
+      UserService::SyncTendersJob.perform_later user.id
       render json: { message: 'User successfully removed from supplier' }, status: :accepted
     end
 
@@ -117,6 +122,7 @@ module UserService
     end
 
     def update
+      raise SharedModules::MethodNotAllowed.new("Admin can't update user") if current_user != true_user
       unless @user&.valid_password?(params[:user][:currentPassword])
         render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
       else
@@ -156,6 +162,7 @@ module UserService
     end
 
     def update_account
+      raise SharedModules::MethodNotAllowed.new("Admin can't update user") if current_user != true_user
       unless @user&.valid_password?(params[:currentPassword])
         render json: { errors: [{ password: 'Invalid Password' }] }, status: :unprocessable_entity
       else
@@ -340,7 +347,7 @@ module UserService
 
     def accept_invitation
       if @user.nil?
-        raise SharedModules::AlertError.new("This link is invalid or has expired. Please use the link in the most recent email you received.")
+        raise SharedModules::AlertError.new("This link is invalid or has expired. If you haven't already confirmed your account, please use the link in the most recent email you received.")
       elsif @user.confirmed?
         raise SharedModules::AlertError.new("Invitation already accepted")
       else

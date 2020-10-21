@@ -127,7 +127,10 @@ module UserService
       result = post_token user, host, hash
       new_uuid = result['registeredUserUUID']
       user.update_attributes!(uuid: new_uuid) if new_uuid.present? && user.uuid != new_uuid
-      raise result['errors'] if result['errors'].present?
+
+      Airbrake.notify_sync(result['errors'].to_s, hash) if result['errors'].present?
+
+      raise "Tender user sync failed!" if result['errors'].present?
     end
   end
 end
