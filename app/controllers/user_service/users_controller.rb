@@ -386,6 +386,11 @@ module UserService
         return
       end
 
+      unless @user.has_password
+        redirect_to "/confirm-invitation/"+params[:token]
+        return
+      end
+
       unless @user.confirm
         redirect_to "/failure/email_confirmation_failed"
         return
