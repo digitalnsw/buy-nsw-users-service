@@ -32,7 +32,7 @@ module UserService
           unifier: 'invite_' + @user.id.to_s + '_to_' + seller_id.to_s,
           recipients: [@user.id],
           subject: "Your are invited by #{current_user.email} to join their team",
-          body: "By accepting this invitation you will be able to make changes to their company account and profile. If you are already member of any team, you will not loose your access rights to your current team.",
+          body: "Your are invited by #{current_user.email} to join their team. By accepting this invitation you will be able to make changes to their company account and profile. If you are already member of any team, you will not loose your access rights to your current team.",
           fa_icon: 'user-shield',
           actions: [
             {

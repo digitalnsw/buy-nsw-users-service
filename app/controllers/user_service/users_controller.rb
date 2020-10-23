@@ -33,7 +33,7 @@ module UserService
     end
 
     def make_owner_if_first user, s_id
-      has_owners = ::User.confirmed.exists?("#{s_id} = any(seller_ids)")
+      has_owners = ::User.confirmed.where.not(id: user.id).where("#{s_id} = any(seller_ids)").exists?
       user.grant! s_id, :owner unless has_owners
     end
 
@@ -41,13 +41,18 @@ module UserService
     def add_to_team
       u = ::User.find(params[:id])
       s_id = params[:seller_id].to_i
-      privileges = params[:privileges]&.to_a&.map(&:to_sym) || []
+
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
+
       UserService::SyncTendersJob.perform_later u.id
+
+      make_owner_if_first u, s_id
+
+      privileges = params[:privileges]&.to_a&.map(&:to_sym) || []
       privileges.each do |p|
         u.grant! s_id, p
       end
-      make_owner_if_first u, s_id
+      render json: { message: 'User successfully added to supplier' }, status: :accepted
     end
 
     def remove_from_supplier
@@ -62,6 +67,7 @@ module UserService
       end
 
       UserService::SyncTendersJob.perform_later user.id
+
       render json: { message: 'User successfully removed from supplier' }, status: :accepted
     end
 
