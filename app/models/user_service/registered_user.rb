@@ -49,7 +49,7 @@ module UserService
 
           u.uuid = ru.uuid
           u.full_name = (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
-            gsub(/[()]/, '').gsub(/ +/, ' ').strip if u.full_name.blank?
+            gsub(/[^a-zA-Z0-9 .'\-]/, ' ').gsub(/ +/, ' ').strip if u.full_name.blank?
           u.roles << 'seller' unless u.is_seller? || u.is_buyer?
           u.password = u.password_confirmation = SecureRandom.hex(32) unless u.has_password?
 
