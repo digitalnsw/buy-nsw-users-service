@@ -24,11 +24,9 @@ module UserService
     def invite_existing_seller seller_id
       if @user.seller_ids.include? seller_id
         raise SharedModules::AlertError.new(@user.confirmed? ?
-          'This user is already member of your team' : 'This user is already invited')
+          'This user is already member of your team' : 'This user is already invited and will join as soon as confirming their account')
       elsif !@user.is_seller?
         raise SharedModules::AlertError.new('This user has registered with a non-supplier account.')
-      elsif !@user.confirmed?
-        raise SharedModules::AlertError.new('This address is not confirmed yet.')
       else
         SharedResources::RemoteNotification.create_notification(
           unifier: 'invite_' + @user.id.to_s + '_to_' + seller_id.to_s,
