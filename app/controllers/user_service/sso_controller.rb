@@ -38,7 +38,7 @@ module UserService
             redirectString: redirectString,
             current_user: current_user&.id,
           })
-          UserService::SyncTendersJob.new.perform(current_user.id) if current_user
+          UserService::SyncTendersJob.perform_later(current_user.id) if current_user
           raise_error
         end
       end
@@ -54,7 +54,7 @@ module UserService
             loginURL: loginURL,
             current_user: current_user&.id,
           })
-          UserService::SyncTendersJob.new.perform(current_user.id) if current_user
+          UserService::SyncTendersJob.perform_later(current_user.id) if current_user
           raise_error
         end
       end
