@@ -32,18 +32,22 @@ module UserService
       end
     end
 
+    def make_owner_if_first user, s_id
+      has_owners = ::User.confirmed.exists?("#{s_id} = any(seller_ids)")
+      user.grant! s_id, :owner unless has_owners
+    end
+
     # This method is called when admin assignes a user or when they iniate a supplier
     def add_to_team
       u = ::User.find(params[:id])
       s_id = params[:seller_id].to_i
       privileges = params[:privileges]&.to_a&.map(&:to_sym) || []
-      has_owners = ::User.exists?("#{s_id} = any(seller_ids)")
       u.update_attributes!(seller_id: s_id, seller_ids: u.seller_ids | [s_id])
       UserService::SyncTendersJob.perform_later u.id
-      u.grant! s_id, :owner unless has_owners
       privileges.each do |p|
         u.grant! s_id, p
       end
+      make_owner_if_first u, s_id
     end
 
     def remove_from_supplier
@@ -379,6 +383,10 @@ module UserService
       unless @user.confirm
         redirect_to "/failure/email_confirmation_failed"
         return
+      end
+
+      @user.seller_ids.each do |s_id|
+        make_owner_if_first @user, s_id
       end
 
       logout_user current_user
