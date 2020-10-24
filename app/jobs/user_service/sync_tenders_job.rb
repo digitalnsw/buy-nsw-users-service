@@ -130,7 +130,7 @@ module UserService
 
       Airbrake.notify_sync(result['errors'].to_s, hash) if result['errors'].present?
 
-      raise "Tender user sync failed!" if result['errors'].present?
+      raise RetryError.new("Tender user sync failed!") if result['errors'].present?
     end
   end
 end
