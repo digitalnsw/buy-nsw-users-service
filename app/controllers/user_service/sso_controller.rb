@@ -71,8 +71,8 @@ module UserService
         seller_ids: current_user&.seller_ids,
         sub: current_user&.uuid,
         iss: 'SUPPLIER_HUB',
-        iat: Time.now.to_i - 30,
-        exp: Time.now.to_i + 30,
+        iat: Time.now.to_i - 300,
+        exp: Time.now.to_i + 300,
         nonce: (nonce.present? ? nonce : SecureRandom.base58(10)),
         aud: URI.parse(loginURL).host,
       }.select{|k,v|v}
