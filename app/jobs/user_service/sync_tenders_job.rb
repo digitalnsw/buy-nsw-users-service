@@ -95,7 +95,7 @@ module UserService
       hash = {
         "iss": "SUPPLIER_HUB",
         "aud": host,
-        "iat": Time.now.to_i,
+        "iat": Time.now.to_i - 30,
         "exp": Time.now.to_i + 30,
         "nonce": rand(1<<60),
         "firstname": firstname,
