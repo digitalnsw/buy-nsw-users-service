@@ -84,6 +84,7 @@ module UserService
           date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
           sent_at: Time.now.utc,
           user_id: current_user&.id,
+          uuid: current_user&.uuid,
           action: 'create_token',
           host: URI.parse(loginURL).host,
           redirect_string: redirectString,
