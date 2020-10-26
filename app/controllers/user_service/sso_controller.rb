@@ -37,6 +37,7 @@ module UserService
           Airbrake.notify_sync("redirectString too long!", {
             redirectString: redirectString,
             current_user: current_user&.id,
+            request_url: request.url,
           })
           raise_error
         end
@@ -52,6 +53,7 @@ module UserService
           Airbrake.notify_sync("loginURL too long!", {
             loginURL: loginURL,
             current_user: current_user&.id,
+            request_url: request.url,
           })
           raise_error
         end
