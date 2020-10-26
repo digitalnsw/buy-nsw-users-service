@@ -63,17 +63,6 @@ module UserService
     end
 
     def create_token
-      log = AnalyticsService::SsoLog.create(
-        date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
-        sent_at: Time.now.utc,
-        user_id: current_user&.id,
-        action: 'create_token',
-        host: URI.parse(loginURL).host,
-        redirect_string: redirectString,
-        login_url: loginURL,
-      )
-      log.save
-
       data = {
         id: current_user&.id,
         email: current_user&.email,
@@ -87,8 +76,26 @@ module UserService
         nonce: (nonce.present? ? nonce : SecureRandom.base58(10)),
         aud: URI.parse(loginURL).host,
       }.select{|k,v|v}
-      # TODO: Log this token, when tenders implemented the nonce invalidator
-      encrypt_and_sign data
+
+      token = encrypt_and_sign data
+
+      begin
+        log = AnalyticsService::SsoLog.create(
+          date_hour: Time.now.utc.strftime('H_%Y-%m-%d_%H'),
+          sent_at: Time.now.utc,
+          user_id: current_user&.id,
+          action: 'create_token',
+          host: URI.parse(loginURL).host,
+          redirect_string: redirectString,
+          login_url: loginURL,
+          token: token,
+        )
+        log.save
+      rescue => e
+        Airbrake.notify_sync("SSO log record failed", data)
+      end
+
+      token
     end
 
     def logout
