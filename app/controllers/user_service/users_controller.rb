@@ -132,7 +132,6 @@ module UserService
     end
 
     def update
-      raise SharedModules::MethodNotAllowed.new("Admin can't update user") if current_user != true_user
       unless @user&.valid_password?(params[:user][:currentPassword])
         render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
       else
@@ -172,7 +171,6 @@ module UserService
     end
 
     def update_account
-      raise SharedModules::MethodNotAllowed.new("Admin can't update user") if current_user != true_user
       unless @user&.valid_password?(params[:currentPassword])
         render json: { errors: [{ password: 'Invalid Password' }] }, status: :unprocessable_entity
       else
