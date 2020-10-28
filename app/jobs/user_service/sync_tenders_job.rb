@@ -60,7 +60,7 @@ module UserService
       lastname = present_or(name.partition(' ').last, 'Lastname')
 
       host = URI(ENV['ETENDERING_URL']).host
-      version = user.seller.last_version
+      version = user.seller&.last_version
 
       # out side au is not in the list by purpose
       state_hash = {
