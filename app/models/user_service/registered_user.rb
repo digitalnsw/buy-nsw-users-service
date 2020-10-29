@@ -48,6 +48,7 @@ module UserService
           u ||= ::User.find_or_initialize_by(email: row['Email'].downcase)
 
           u.uuid = ru.uuid
+          #FIXME: below line doesn't work! it doesn't update the email column
           u.email = ru.email
           u.full_name = (ru.fields['GivenName'].to_s + ' ' + ru.fields['Surname'].to_s).
             gsub(/[^a-zA-Z0-9 .'\-]/, ' ').gsub(/ +/, ' ').strip if u.full_name.blank?
