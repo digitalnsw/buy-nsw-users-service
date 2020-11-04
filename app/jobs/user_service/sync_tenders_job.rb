@@ -45,7 +45,15 @@ module UserService
         })
       end
 
-      JSON.parse(response.body)
+      begin
+        result = JSON.parse(response.body)
+      rescue => e
+        Airbrake.notify_sync("Sync response json parse failed!", {
+          user_id: user&.id,
+          trace: e.backtrace.select{|l|l.match?(/buy-nsw/)},
+        })
+      end
+      result
     end
 
     def present_or first, second

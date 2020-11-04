@@ -6,7 +6,7 @@ module UserService
     before_action :authenticate_service, only: [:add_to_team, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
-    before_action :downcase_email
+    before_action :downcase_and_strip_email
     before_action :set_current_user, only: [:update, :update_account, :index, :switch_supplier]
     before_action :set_user_by_email, only: [:forgot_password, :resend_confirmation, :signup]
     before_action :set_user_by_token, only: [:accept_invitation, :confirm_email]
@@ -453,8 +453,8 @@ module UserService
       form_authenticity_token
     end
 
-    def downcase_email
-      params[:email] = params[:email].downcase if params[:email].present?
+    def downcase_and_strip_email
+      params[:email] = params[:email].downcase.strip if params[:email].present?
     end
 
     def set_current_user

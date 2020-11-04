@@ -14,7 +14,7 @@ module UserService
     end
 
     def login
-      user = ::User.find_by_email(params[:email]&.downcase)
+      user = ::User.find_by_email(params[:email]&.downcase&.strip)
       if user && user.last_failed_at && user.failed_count && (Time.now - user.last_failed_at).to_i < 3600 && user.failed_count >= 10
         render json: { errors: [
           { password: "Your account has been locked. Try again in one hour"}
@@ -32,7 +32,7 @@ module UserService
 
         user_info
       else
-        if user.nil? && ::User.find_by_unconfirmed_email(params[:email]&.downcase)
+        if user.nil? && ::User.find_by_unconfirmed_email(params[:email]&.downcase&.strip)
           render json: { errors: [
             { password: "Please confirm your new email address or use your old one to login"}
           ] }, status: :unprocessable_entity
