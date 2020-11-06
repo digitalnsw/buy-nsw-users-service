@@ -46,14 +46,14 @@ module UserService
       end
 
       begin
-        result = JSON.parse(response.body)
+        JSON.parse(response.body)
       rescue => e
         Airbrake.notify_sync("Sync response json parse failed!", {
           user_id: user&.id,
           trace: e.backtrace.select{|l|l.match?(/buy-nsw/)},
         })
+        nil
       end
-      result
     end
 
     def present_or first, second
@@ -132,7 +132,7 @@ module UserService
         hash['password'] = password
       end
 
-      result = post_token user, host, hash
+      result = post_token(user, host, hash) or return
       new_uuid = result['registeredUserUUID']
       user.update_attributes!(uuid: new_uuid) if new_uuid.present? && user.uuid != new_uuid
 
