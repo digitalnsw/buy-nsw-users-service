@@ -2,8 +2,8 @@ require_dependency "user_service/application_controller"
 
 module UserService
   class UsersController < UserService::ApplicationController
-    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :destroy, :remove_from_supplier]
-    before_action :authenticate_service, only: [:add_to_team, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :request_declined, :destroy, :remove_from_supplier]
+    before_action :authenticate_service, only: [:add_to_team, :request_declined, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_and_strip_email
@@ -52,7 +52,37 @@ module UserService
       privileges.each do |p|
         u.grant! s_id, p
       end
+
+      abn = ABN.new(params[:abn]).to_s
+
+      if abn.present?
+        SharedResources::RemoteNotification.create_notification(
+          unifier: 'accepted_' + u.id.to_s + '_' + Time.now.to_i.to_s,
+          recipients: [u.id],
+          subject: "Your join request was accepted",
+          body: "Your request to join supplier with ABN #{abn} was accepted.",
+          fa_icon: 'user-check',
+          actions: [],
+        )
+      end
+
       render json: { message: 'User successfully added to supplier' }, status: :accepted
+    end
+
+    def request_declined
+      u_id = params[:id].to_i
+      abn = ABN.new(params[:abn]).to_s
+
+      if abn.present?
+        SharedResources::RemoteNotification.create_notification(
+          unifier: 'declined_' + u_id.to_s + '_' + Time.now.to_i.to_s,
+          recipients: [u_id],
+          subject: "Your join request was declined",
+          body: "Your request to join supplier with ABN #{abn} was declined.",
+          fa_icon: 'user-times',
+          actions: [],
+        )
+      end
     end
 
     def remove_from_supplier

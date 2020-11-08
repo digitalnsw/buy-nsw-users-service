@@ -25,6 +25,7 @@ UserService::Engine.routes.draw do
     post :forgot_password, on: :collection
     post :resend_confirmation, on: :collection
     post :add_to_team, on: :member
+    post :request_declined, on: :member
     post :accept_invitation, on: :collection
     post :confirm_admin_invitation, on: :collection
     post :update_lost_password, on: :collection
