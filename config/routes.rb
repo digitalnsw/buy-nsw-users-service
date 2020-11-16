@@ -21,7 +21,6 @@ UserService::Engine.routes.draw do
     # because we don't want to set_user based on user_id!
     # it's more secure to set it based on current user, if possible
 
-    post :update_account, on: :collection
     post :forgot_password, on: :collection
     post :resend_confirmation, on: :collection
     post :add_to_team, on: :member

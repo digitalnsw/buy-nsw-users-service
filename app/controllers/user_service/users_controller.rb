@@ -4,10 +4,10 @@ module UserService
   class UsersController < UserService::ApplicationController
     skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :request_declined, :destroy, :remove_from_supplier]
     before_action :authenticate_service, only: [:add_to_team, :request_declined, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
-    before_action :authenticate_user, only: [:index, :create, :update, :update_account, :switch_supplier]
+    before_action :authenticate_user, only: [:index, :create, :update, :switch_supplier]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_and_strip_email
-    before_action :set_current_user, only: [:update, :update_account, :index, :switch_supplier]
+    before_action :set_current_user, only: [:update, :index, :switch_supplier]
     before_action :set_user_by_email, only: [:forgot_password, :resend_confirmation, :signup]
     before_action :set_user_by_token, only: [:accept_invitation, :confirm_email]
 
@@ -161,86 +161,90 @@ module UserService
       render json: serializer.index
     end
 
+    def update_full_name new_name
+      old_name = @user.full_name
+      @user.full_name = new_name
+      if @user.has_changes_to_save?
+        if @user.save
+          log_user_event!("User updated full name from #{old_name} to #{@user.full_name}")
+          return true
+        else
+          render json: { errors: [{ full_name: 'Name is invalid' }] }, status: :unprocessable_entity
+          return false
+        end
+      end
+      true
+    end
+
+    def update_opted_out opted_out
+      @user.opted_out = opted_out.to_s == 'true'
+      if @user.has_changes_to_save?
+        if @user.save
+          log_user_event!("User opted #{@user.opted_out ? 'out' : 'in'}")
+          return true
+        else
+          render json: { errors: [{ opted_out: 'Opt in/out failed' }] }, status: :unprocessable_entity
+          return false
+        end
+      end
+      true
+    end
+
+    def update_email new_email
+      new_email = new_email&.downcase&.strip
+
+      if @user.email == new_email && @user.unconfirmed_email.present?
+        old_email = @user.unconfirmed_email
+        @user.unconfirmed_email = nil
+        if @user.save
+          log_user_event!("User updated email from #{old_email} back to #{new_email}")
+          return true
+        else
+          render json: { errors: [{ email: 'Email address is currently in use or invalid' }] }, status: :unprocessable_entity
+          return false
+        end
+      elsif @user.email != new_email
+        old_email = @user.email
+        @user.email = new_email
+        if @user.save
+          log_user_event!("User requested email update from #{old_email} to #{new_email}")
+          return true
+        else
+          render json: { errors: [{ email: 'Email address is currently in use or invalid' }] }, status: :unprocessable_entity
+          return false
+        end
+      end
+      true
+    end
+
+    def update_password new_password
+      if new_password.present?
+        @user.reload
+        if @user.reset_password(new_password, new_password)
+          log_user_event!("User password updated")
+          return true
+        else
+          render json: { errors: [{ newPassword: 'Password was not accepted' }] }, status: :unprocessable_entity
+          return false
+        end
+      end
+      true
+    end
+
     def update
       unless @user&.valid_password?(params[:user][:currentPassword])
         render json: { errors: [{ currentPassword: 'Invalid Password' }] }, status: :unprocessable_entity
       else
-        @user.opted_out = params[:user][:opted_out].to_s == 'true'
-        @user.full_name = params[:user][:full_name]
-        if @user.has_changes_to_save?
-          unless @user.save
-            render json: { errors: [{ full_name: 'Name is invalid' }] }, status: :unprocessable_entity
-            return
-          end
-        end
+        update_full_name(params[:user][:full_name]) or return
+        update_opted_out(params[:user][:opted_out]) or return
+        update_email(params[:user][:email]) or return
+        update_password(params[:user][:newPassword]) or return
 
         UserService::SyncTendersJob.perform_later @user.id
 
-        if (@user.unconfirmed_email || @user.email) != params[:user][:email]
-
-          @user.email = params[:user][:email]
-          unless @user.save
-            render json: { errors: [{ email: 'Email address is currently in use or invalid' }] }, status: :unprocessable_entity
-            return
-          end
-        end
-
-        if params[:user][:newPassword].present?
-          @user.reload
-          unless @user.reset_password(params[:user][:newPassword], params[:user][:newPassword])
-            render json: { errors: [{ newPassword: 'Password was not accepted' }] }, status: :unprocessable_entity
-            return
-          end
-        end
-
         sign_in(@user, bypass: true)
         reset_session_user @user
-        log_user_event!("User email/password updated")
         render json: serializer.show, status: :accepted
-      end
-    end
-
-    def update_account
-      unless @user&.valid_password?(params[:currentPassword])
-        render json: { errors: [{ password: 'Invalid Password' }] }, status: :unprocessable_entity
-      else
-        @user.full_name = params[:full_name]
-        if @user.has_changes_to_save?
-          unless @user.save
-            render json: { errors: [{ full_name: 'Name is invalid' }] }, status: :unprocessable_entity
-            return
-          end
-        end
-
-        UserService::SyncTendersJob.perform_later @user.id
-
-        if @user.email != params[:email]
-          @user.email = params[:email]
-          if @user.is_buyer? && !SharedResources::RemoteBuyer.check_email(params[:email])
-            render json: { errors: [ {
-              email: 'Please use a recognised Australian Government email address'
-            } ] }, status: :unprocessable_entity
-            return
-          end
-          unless @user.save
-            render json: { errors: [{ email: 'This email address is currently in use or invalid' }] }, status: :unprocessable_entity
-            return
-          end
-        end
-
-        if params[:newPassword].present?
-          @user.reload
-          unless @user.reset_password(params[:newPassword], params[:newPassword])
-            render json: { errors: [{ newPassword: 'New password was not accepted' }] }, status: :unprocessable_entity
-            return
-          end
-        end
-
-        sign_in(@user, bypass: true)
-        reset_session_user @user
-
-        log_user_event!("User email/password updated")
-        render json: { message: 'User updated' }, status: :accepted
       end
     end
 
