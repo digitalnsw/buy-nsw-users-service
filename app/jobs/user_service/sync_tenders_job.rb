@@ -48,6 +48,7 @@ module UserService
       begin
         JSON.parse(response.body)
       rescue => e
+        user.update_attributes(sync_pending: true)
         Airbrake.notify_sync("Sync response json parse failed!", {
           user_id: user&.id,
           trace: e.backtrace.select{|l|l.match?(/buy-nsw/)},
@@ -136,9 +137,13 @@ module UserService
       new_uuid = result['registeredUserUUID']
       user.update_attributes!(uuid: new_uuid) if new_uuid.present? && user.uuid != new_uuid
 
-      Airbrake.notify_sync(result['errors'].to_s, hash) if result['errors'].present?
-
-      raise SharedModules::RetryError.new("Tender user sync failed!") if result['errors'].present?
+      if result['errors'].present?
+        Airbrake.notify_sync(result['errors'].to_s, hash)
+        user.update_attributes(sync_pending: true)
+        # raise SharedModules::RetryError.new("Tender user sync failed!")
+      else
+        user.update_attributes(sync_pending: false)
+      end
     end
   end
 end
