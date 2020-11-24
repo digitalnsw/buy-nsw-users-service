@@ -93,7 +93,7 @@ module UserService
         user.seller_ids.delete s_id
         user.seller_id = user.seller_ids.first unless user.seller_id.in? user.seller_ids
         user.revoke s_id
-        user.save
+        user.save!
       end
 
       UserService::SyncTendersJob.perform_later user.id
