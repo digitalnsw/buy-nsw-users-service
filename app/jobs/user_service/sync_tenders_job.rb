@@ -140,7 +140,7 @@ module UserService
       if result['errors'].present?
         Airbrake.notify_sync(result['errors'].to_s, hash)
         user.update_attributes(sync_pending: true)
-        # raise SharedModules::RetryError.new("Tender user sync failed!")
+        raise SharedModules::RetryError.new("Tender user sync failed!")
       else
         user.update_attributes(sync_pending: false)
       end
