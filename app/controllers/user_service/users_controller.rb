@@ -4,10 +4,10 @@ module UserService
   class UsersController < UserService::ApplicationController
     skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :request_declined, :destroy, :remove_from_supplier]
     before_action :authenticate_service, only: [:add_to_team, :request_declined, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
-    before_action :authenticate_user, only: [:index, :create, :update, :switch_supplier]
+    before_action :authenticate_user, only: [:index, :create, :update, :switch_supplier, :self_remove]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_and_strip_email
-    before_action :set_current_user, only: [:update, :index, :switch_supplier]
+    before_action :set_current_user, only: [:update, :index, :switch_supplier, :self_remove]
     before_action :set_user_by_email, only: [:forgot_password, :resend_confirmation, :signup]
     before_action :set_user_by_token, only: [:accept_invitation, :confirm_email]
 
@@ -27,6 +27,19 @@ module UserService
         @user.update_attributes(seller_id: seller_id)
         #reset session user
         UserService::SyncTendersJob.perform_later @user.id
+      else
+        raise SharedModules::NotAuthorized.new
+      end
+    end
+
+    def self_remove
+      seller_id = params[:seller_id].to_i
+      if @user&.is_seller? && @user.seller_ids.include?(seller_id)
+        @user.seller_ids.delete seller_id
+        @user.seller_id = @user.seller_ids.first unless @user.seller_id.in? @user.seller_ids
+        @user.revoke seller_id
+        @user.save!
+        UserService::SyncTendersJob.perform_later @user.id if @user.seller_id
       else
         raise SharedModules::NotAuthorized.new
       end

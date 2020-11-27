@@ -29,6 +29,7 @@ UserService::Engine.routes.draw do
     post :confirm_admin_invitation, on: :collection
     post :update_lost_password, on: :collection
     post :remove_from_supplier, on: :member
+    post :self_remove, on: :collection
 
     get :seller_team, on: :collection
     get :seller_owners, on: :collection
