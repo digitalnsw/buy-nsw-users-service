@@ -61,7 +61,7 @@ module UserService
       first&.strip.present? ? first&.strip : second
     end
 
-    def perform user_id, retry_if_failed: true
+    def perform user_id, retry_if_failed = true
       return unless ENV['ETENDERING_URL'].present?
       user = ::User.find user_id.to_i
       name = user.full_name || ''
