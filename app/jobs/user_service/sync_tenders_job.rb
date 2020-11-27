@@ -61,7 +61,7 @@ module UserService
       first&.strip.present? ? first&.strip : second
     end
 
-    def perform user_id
+    def perform user_id, retry_if_failed: true
       return unless ENV['ETENDERING_URL'].present?
       user = ::User.find user_id.to_i
       name = user.full_name || ''
@@ -140,7 +140,7 @@ module UserService
       if result['errors'].present?
         Airbrake.notify_sync(result['errors'].to_s, hash)
         user.update_attributes(sync_pending: true)
-        raise SharedModules::RetryError.new("Tender user sync failed!")
+        raise SharedModules::RetryError.new("Tender user sync failed!") if retry_if_failed
       else
         user.update_attributes(sync_pending: false)
       end
