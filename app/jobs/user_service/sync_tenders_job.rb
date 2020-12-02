@@ -139,7 +139,12 @@ module UserService
 
       if result['errors'].present?
         Airbrake.notify_sync(result['errors'].to_s, hash)
-        user.update_attributes(sync_pending: true)
+        if result['errors'].to_s.include? "RegisteredUserRecord does NOT exist"
+          user.update_attributes(sync_pending: true, uuid: nil)
+        else
+          user.update_attributes(sync_pending: true)
+        end
+
         raise SharedModules::RetryError.new("Tender user sync failed!") if retry_if_failed
       else
         user.update_attributes(sync_pending: false)
