@@ -1,6 +1,5 @@
 module UserService
   class SyncTendersTeamJob < SharedModules::ApplicationJob
-    include SharedModules::Encrypt
 
     def perform seller_id
       team = User.where(seller_id: seller_id).to_a
