@@ -30,6 +30,7 @@ UserService::Engine.routes.draw do
     post :update_lost_password, on: :collection
     post :remove_from_supplier, on: :member
     post :self_remove, on: :collection
+    post :reset_user, on: :member
 
     get :seller_team, on: :collection
     get :seller_owners, on: :collection

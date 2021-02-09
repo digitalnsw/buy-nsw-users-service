@@ -2,8 +2,8 @@ require_dependency "user_service/application_controller"
 
 module UserService
   class UsersController < UserService::ApplicationController
-    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :request_declined, :destroy, :remove_from_supplier]
-    before_action :authenticate_service, only: [:add_to_team, :request_declined, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :get_by_id, :get_by_email]
+    skip_before_action :verify_authenticity_token, raise: false, only: [:add_to_team, :request_declined, :destroy, :remove_from_supplier, :reset_user]
+    before_action :authenticate_service, only: [:add_to_team, :request_declined, :seller_team, :seller_owners, :destroy, :remove_from_supplier, :reset_user, :get_by_id, :get_by_email]
     before_action :authenticate_user, only: [:index, :create, :update, :switch_supplier, :self_remove]
     before_action :authenticate_service_or_user, only: [:show]
     before_action :downcase_and_strip_email
@@ -123,6 +123,17 @@ module UserService
         end
       end
       render json: { message: 'User successfully destroyed' }, status: :accepted
+    end
+
+    def reset_user
+      user = ::User.find_by(id: params[:id])
+      if user.present?
+        ::User.transaction do
+          user.update_column(:email, 'reset_user_' + rand(10 ** 6).to_s.rjust(6,'0') + '_' + user.email)
+          user.save!
+        end
+      end
+      render json: { message: 'User successfully reset' }, status: :accepted
     end
 
     def show
