@@ -27,4 +27,6 @@ group :test do
   gem 'mocha'
   gem 'simplecov'
   gem 'airbrake', '~> 9.5'
+
+  gem 'mimemagic', '~>0.3.6'
 end
