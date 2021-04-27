@@ -84,13 +84,17 @@ module UserService
       }
       state = state_hash[version&.addresses&.first&.state] || "NSW"
       country = ISO3166::Country.new(version&.addresses&.first&.country)&.name&.upcase || 'AUSTRALIA'
-
+      
       abr = SharedModules::Abr.lookup(version&.abn)
       abn = if abr && abr[:status] == 'Active'
               version&.abn.gsub(' ', '')
             else
               ''
             end
+
+      cert_indigenous = SellerService::Certification.find_by(cert_display: 'Aboriginal')
+      indigenous_optout = version&.indigenous_optout = nil || version&.indigenous_optout = false
+      is_verified_indigenous = SellerService::SupplierCertificate.where(supplier_abn: SellerService::SupplierCertificate.formatted_abn(abn), certification_id: cert_indigenous.id).count > 0
 
       sme_hash = {
         'sole' => '0-19',
@@ -120,9 +124,9 @@ module UserService
         "state": country == 'AUSTRALIA' ? state : 'Outside Australia',
         "country": country,
         "companyPhone": present_or(version&.contact_phone, "000"),
-        "ATSI": (version&.indigenous ? '1' : '0'),
+        "ATSI": (!indigenous_optout && is_verified_indigenous ? '1' : '0'),
       }
-
+      puts hash
       if user.uuid
         hash['sub'] = user.uuid
       else
